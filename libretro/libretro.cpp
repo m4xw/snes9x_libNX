@@ -135,6 +135,7 @@ void retro_set_environment(retro_environment_t cb)
       { "snes9x_sndchan_6", "Enable sound channel 6; enabled|disabled" },
       { "snes9x_sndchan_7", "Enable sound channel 7; enabled|disabled" },
       { "snes9x_sndchan_8", "Enable sound channel 8; enabled|disabled" },
+      { "snes9x_overscan", "Crop Overscan; enabled|disabled" },
       { NULL, NULL },
    };
 
@@ -233,6 +234,16 @@ static void update_variables(void)
    var.key="snes9x_gfx_transp";
    var.value=NULL;
    Settings.Transparency=!(environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value && var.value[0]=='d');
+
+   var.key = "snes9x_overscan";
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      if (!strcmp(var.value, "enabled"))
+         use_overscan = false;
+      else if(!strcmp(var.value, "disabled"))
+         use_overscan = true;
+   }
 
    if (reset_sfx)
       S9xResetSuperFX();
@@ -582,11 +593,6 @@ static void check_system_specs(void)
 void retro_init(void)
 {
    struct retro_log_callback log;
-   if (environ_cb)
-   {
-      if (!environ_cb(RETRO_ENVIRONMENT_GET_OVERSCAN, &use_overscan))
-         use_overscan = false;
-   }
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &log))
       log_cb = log.log;
