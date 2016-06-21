@@ -197,9 +197,13 @@
 
 static inline void S9xReschedule (void);
 
+bool8 finishedFrame = false;
+
 
 void S9xMainLoop (void)
 {
+	do
+	{
 	for (;;)
 	{
 		if (CPU.NMILine)
@@ -309,18 +313,30 @@ void S9xMainLoop (void)
 
 		if (Settings.SA1)
 			S9xSA1MainLoop();
+			
+		if (finishedFrame)
+		break;
 	}
 
-	S9xPackStatus();
-
-	if (CPU.Flags & SCAN_KEYS_FLAG)
+	if (!finishedFrame)
 	{
-	#ifdef DEBUGGER
-		if (!(CPU.Flags & FRAME_ADVANCE_FLAG))
-	#endif
-		S9xSyncSpeed();
-		CPU.Flags &= ~SCAN_KEYS_FLAG;
+		S9xPackStatus();
+	
+		if (CPU.Flags & SCAN_KEYS_FLAG)
+		{
+			#ifdef DEBUGGER
+				if (!(CPU.Flags & FRAME_ADVANCE_FLAG))
+			#endif
+				S9xSyncSpeed();
+				CPU.Flags &= ~SCAN_KEYS_FLAG;
+		}
 	}
+        else
+        {
+            finishedFrame = false;
+            break;
+        }
+    }while(!finishedFrame);
 }
 
 static inline void S9xReschedule (void)
@@ -473,6 +489,8 @@ void S9xDoHEventProcessing (void)
 			if (CPU.V_Counter == PPU.ScreenHeight + FIRST_VISIBLE_LINE)	// VBlank starts from V=225(240).
 			{
 				S9xEndScreenRefresh();
+				if (!(GFX.DoInterlace && GFX.InterlaceFrame == 0)) /* MIBR */
+                			finishedFrame = true;
 				PPU.HDMA = 0;
 				// Bits 7 and 6 of $4212 are computed when read in S9xGetPPU.
 			#ifdef DEBUGGER
