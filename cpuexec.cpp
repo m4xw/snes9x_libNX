@@ -499,7 +499,7 @@ void S9xDoHEventProcessing (void)
 			{
 				S9xEndScreenRefresh();
 
-#ifdef LAGFFIX
+#ifdef LAGFIX
 				if (!(GFX.DoInterlace && GFX.InterlaceFrame == 0)) /* MIBR */
                 			finishedFrame = true;
 #endif
