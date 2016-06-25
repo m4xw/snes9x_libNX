@@ -1,5 +1,6 @@
 DEBUG = 0
 HAVE_EXCEPTIONS = 0
+LAGFIX=1
 
 ifeq ($(platform),)
 	platform = unix
@@ -22,6 +23,11 @@ CXX			?= g++
 CC			?= gcc
 TARGET_NAME	= snes9x
 LIBM		= -lm
+
+ifeq ($(LAGFIX),1)
+CFLAGS   += -DLAGFIX
+CXXFLAGS += -DLAGFIX
+endif
 
 # Unix
 ifeq ($(platform), unix)

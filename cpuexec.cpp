@@ -197,13 +197,16 @@
 
 static inline void S9xReschedule (void);
 
+#ifdef LAGFIX
 bool8 finishedFrame = false;
-
+#endif
 
 void S9xMainLoop (void)
 {
+#ifdef LAGFIX
 	do
 	{
+#endif
 	for (;;)
 	{
 		if (CPU.NMILine)
@@ -314,11 +317,15 @@ void S9xMainLoop (void)
 		if (Settings.SA1)
 			S9xSA1MainLoop();
 			
+#ifdef LAGFIX
 		if (finishedFrame)
 		break;
+#endif
 	}
 
+#ifdef LAGFIX
 	if (!finishedFrame)
+#endif
 	{
 		S9xPackStatus();
 	
@@ -331,12 +338,14 @@ void S9xMainLoop (void)
 				CPU.Flags &= ~SCAN_KEYS_FLAG;
 		}
 	}
-        else
-        {
-            finishedFrame = false;
-            break;
-        }
-    }while(!finishedFrame);
+#ifdef LAGFIX
+   else
+   {
+      finishedFrame = false;
+      break;
+   }
+   }while(!finishedFrame);
+#endif
 }
 
 static inline void S9xReschedule (void)
@@ -489,8 +498,11 @@ void S9xDoHEventProcessing (void)
 			if (CPU.V_Counter == PPU.ScreenHeight + FIRST_VISIBLE_LINE)	// VBlank starts from V=225(240).
 			{
 				S9xEndScreenRefresh();
+
+#ifdef LAGFFIX
 				if (!(GFX.DoInterlace && GFX.InterlaceFrame == 0)) /* MIBR */
                 			finishedFrame = true;
+#endif
 				PPU.HDMA = 0;
 				// Bits 7 and 6 of $4212 are computed when read in S9xGetPPU.
 			#ifdef DEBUGGER
