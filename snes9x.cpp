@@ -371,7 +371,6 @@ void S9xLoadConfigFiles (char **argv, int argc)
 	Settings.ForceInterleaved2          =  conf.GetBool("ROM::Interleaved2",                   false);
 	Settings.ForceInterleaveGD24        =  conf.GetBool("ROM::InterleaveGD24",                 false);
 	Settings.ApplyCheats                =  conf.GetBool("ROM::Cheat",                          false);
-	Settings.NoPatch                    = !conf.GetBool("ROM::Patch",                          true);
 
 	Settings.ForceLoROM = conf.GetBool("ROM::LoROM", false);
 	Settings.ForceHiROM = conf.GetBool("ROM::HiROM", false);
@@ -740,9 +739,6 @@ char * S9xParseArgs (char **argv, int argc)
 
 			// PATCH/CHEAT OPTIONS
 
-			if (!strcasecmp(argv[i], "-nopatch"))
-				Settings.NoPatch = TRUE;
-			else
 			if (!strcasecmp(argv[i], "-cheat"))
 				Settings.ApplyCheats = TRUE;
 			else

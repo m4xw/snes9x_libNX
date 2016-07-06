@@ -436,7 +436,6 @@ struct SSettings
 	bool8	SnapshotScreenshots;
 
 	bool8	ApplyCheats;
-	bool8	NoPatch;
 	int32	AutoSaveDelay;
 	bool8	DontSaveOopsSnapshot;
 	bool8	UpAndDown;
