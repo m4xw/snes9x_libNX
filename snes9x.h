@@ -431,10 +431,6 @@ struct SSettings
 	char	ServerName[128];
 	int		Port;
 
-	bool8	TakeScreenshot;
-	int8	StretchScreenshots;
-	bool8	SnapshotScreenshots;
-
 	bool8	ApplyCheats;
 	int32	AutoSaveDelay;
 	bool8	DontSaveOopsSnapshot;

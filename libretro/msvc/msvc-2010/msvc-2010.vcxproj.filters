@@ -141,9 +141,6 @@
     <ClCompile Include="..\..\..\sa1cpu.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\screenshot.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\sdd1.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

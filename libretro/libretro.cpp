@@ -564,8 +564,6 @@ void retro_init(void)
    Settings.InitialInfoStringTimeout = 120;
    Settings.HDMATimingHack = 100;
    Settings.BlockInvalidVRAMAccessMaster = TRUE;
-   Settings.StretchScreenshots = 0;
-   Settings.SnapshotScreenshots = FALSE;
    Settings.CartAName[0] = 0;
    Settings.CartBName[0] = 0;
    Settings.AutoSaveDelay = 1;

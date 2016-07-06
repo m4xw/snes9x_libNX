@@ -116,7 +116,6 @@
     <ClCompile Include="..\..\..\ppu.cpp" />
     <ClCompile Include="..\..\..\sa1.cpp" />
     <ClCompile Include="..\..\..\sa1cpu.cpp" />
-    <ClCompile Include="..\..\..\screenshot.cpp" />
     <ClCompile Include="..\..\..\sdd1.cpp" />
     <ClCompile Include="..\..\..\sdd1emu.cpp" />
     <ClCompile Include="..\..\..\server.cpp" />
