@@ -365,7 +365,6 @@ static const int	ptrspeeds[4] = { 1, 1, 4, 8 };
 
 // Note: these should be in asciibetical order!
 #define THE_COMMANDS \
-	S(BeginRecordingMovie), \
 	S(ClipWindows), \
 	S(Debugger), \
 	S(DecEmuTurbo), \
@@ -373,14 +372,12 @@ static const int	ptrspeeds[4] = { 1, 1, 4, 8 };
 	S(DecFrameTime), \
 	S(DecTurboSpeed), \
 	S(EmuTurbo), \
-	S(EndRecordingMovie), \
 	S(ExitEmu), \
 	S(IncEmuTurbo), \
 	S(IncFrameRate), \
 	S(IncFrameTime), \
 	S(IncTurboSpeed), \
 	S(LoadFreezeFile), \
-	S(LoadMovie), \
 	S(LoadOopsFile), \
 	S(Pause), \
 	S(QuickLoad000), \
