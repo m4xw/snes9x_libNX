@@ -198,13 +198,10 @@
 #include "srtc.h"
 #include "controls.h"
 #include "cheats.h"
-#include "movie.h"
 #include "display.h"
 
-#ifdef __LIBRETRO__
 #include "libretro/libretro.h"
 void S9xAppendMapping(struct retro_memory_descriptor *desc);
-#endif
 
 #ifndef SET_UI_COLOR
 #define SET_UI_COLOR(r, g, b) ;
@@ -218,7 +215,6 @@ void S9xAppendMapping(struct retro_memory_descriptor *desc);
 #define min(a, b) (((a) < (b)) ? (a) : (b))
 #endif
 
-static bool8	stopMovie = TRUE;
 static char		LastRomFilename[PATH_MAX + 1] = "";
 
 // from NSRT
@@ -2733,9 +2729,6 @@ void CMemory::InitROM (void)
 	Settings.ForceNTSC = FALSE;
 
 	Settings.TakeScreenshot = FALSE;
-
-	if (stopMovie)
-		S9xMovieStop(TRUE);
 
 	if (PostRomInitFunc)
 		PostRomInitFunc();

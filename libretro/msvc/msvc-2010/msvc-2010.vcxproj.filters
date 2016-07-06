@@ -126,9 +126,6 @@
     <ClCompile Include="..\..\..\memmap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\movie.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\netplay.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

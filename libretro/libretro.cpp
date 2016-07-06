@@ -9,7 +9,6 @@
 #include "snapshot.h"
 #include "controls.h"
 #include "cheats.h"
-#include "movie.h"
 #include "logger.h"
 #include "display.h"
 #include "conffile.h"
@@ -565,8 +564,6 @@ void retro_init(void)
    Settings.InitialInfoStringTimeout = 120;
    Settings.HDMATimingHack = 100;
    Settings.BlockInvalidVRAMAccessMaster = TRUE;
-   Settings.WrongMovieStateProtection = TRUE;
-   Settings.DumpStreamsMaxFrames = -1;
    Settings.StretchScreenshots = 0;
    Settings.SnapshotScreenshots = FALSE;
    Settings.CartAName[0] = 0;
@@ -970,7 +967,6 @@ void S9xSetPalette() {}
 void S9xParseArg(char**, int&, int) {}
 void S9xExit() {}
 bool S9xPollPointer(unsigned int, short*, short*) { return false; }
-const char *S9xChooseMovieFilename(unsigned char) { return NULL; }
 
 bool8 S9xOpenSnapshotFile(const char* filepath, bool8 read_only, STREAM *file)
 {
