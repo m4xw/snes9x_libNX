@@ -182,9 +182,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
-#ifndef __LIBRETRO__
-#include <memory.h>
-#endif
 #include <time.h>
 #include <string.h>
 #ifdef HAVE_STRINGS_H

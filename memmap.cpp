@@ -2755,7 +2755,6 @@ void CMemory::map_lorom (uint32 bank_s, uint32 bank_e, uint32 addr_s, uint32 add
 		}
 	}
 
-#ifdef __LIBRETRO__
 	if (auto_export_map)
 	{
 		struct retro_memory_descriptor desc = {0};
@@ -2767,7 +2766,6 @@ void CMemory::map_lorom (uint32 bank_s, uint32 bank_e, uint32 addr_s, uint32 add
 		desc.len=size;
 		S9xAppendMapping(&desc);
 	}
-#endif
 }
 
 void CMemory::map_hirom (uint32 bank_s, uint32 bank_e, uint32 addr_s, uint32 addr_e, uint32 size, bool auto_export_map)
@@ -2786,7 +2784,6 @@ void CMemory::map_hirom (uint32 bank_s, uint32 bank_e, uint32 addr_s, uint32 add
 		}
 	}
 
-#ifdef __LIBRETRO__
 	if (auto_export_map)
 	{
 		struct retro_memory_descriptor desc = {0};
@@ -2798,7 +2795,6 @@ void CMemory::map_hirom (uint32 bank_s, uint32 bank_e, uint32 addr_s, uint32 add
 		desc.len=size - desc.offset;
 		S9xAppendMapping(&desc);
 	}
-#endif
 }
 
 void CMemory::map_lorom_offset (uint32 bank_s, uint32 bank_e, uint32 addr_s, uint32 addr_e, uint32 size, uint32 offset, bool auto_export_map)
@@ -2817,7 +2813,6 @@ void CMemory::map_lorom_offset (uint32 bank_s, uint32 bank_e, uint32 addr_s, uin
 		}
 	}
 
-#ifdef __LIBRETRO__
 	if (auto_export_map)
 	{
 		struct retro_memory_descriptor desc = {0};
@@ -2830,7 +2825,6 @@ void CMemory::map_lorom_offset (uint32 bank_s, uint32 bank_e, uint32 addr_s, uin
 		desc.len=size;
 		S9xAppendMapping(&desc);
 	}
-#endif
 }
 
 void CMemory::map_hirom_offset (uint32 bank_s, uint32 bank_e, uint32 addr_s, uint32 addr_e, uint32 size, uint32 offset, bool auto_export_map)
@@ -2848,7 +2842,6 @@ void CMemory::map_hirom_offset (uint32 bank_s, uint32 bank_e, uint32 addr_s, uin
 			BlockIsRAM[p] = FALSE;
 		}
 	}
-#ifdef __LIBRETRO__
 	if (auto_export_map)
 	{
 		struct retro_memory_descriptor desc = {0};
@@ -2860,7 +2853,6 @@ void CMemory::map_hirom_offset (uint32 bank_s, uint32 bank_e, uint32 addr_s, uin
 		desc.len=size;
 		S9xAppendMapping(&desc);
 	}
-#endif
 }
 
 void CMemory::map_space (uint32 bank_s, uint32 bank_e, uint32 addr_s, uint32 addr_e, uint8 *data, bool auto_export_map)
@@ -2877,7 +2869,6 @@ void CMemory::map_space (uint32 bank_s, uint32 bank_e, uint32 addr_s, uint32 add
 			BlockIsRAM[p] = TRUE;
 		}
 	}
-#ifdef __LIBRETRO__
 	if (auto_export_map)
 	{
 		struct retro_memory_descriptor desc = {0};
@@ -2887,7 +2878,6 @@ void CMemory::map_space (uint32 bank_s, uint32 bank_e, uint32 addr_s, uint32 add
 		desc.disconnect=0xFF0000;
 		S9xAppendMapping(&desc);
 	}
-#endif
 }
 
 void CMemory::map_index (uint32 bank_s, uint32 bank_e, uint32 addr_s, uint32 addr_e, int index, int type, bool auto_export_map)
@@ -2908,7 +2898,6 @@ void CMemory::map_index (uint32 bank_s, uint32 bank_e, uint32 addr_s, uint32 add
 			BlockIsRAM[p] = isRAM;
 		}
 	}
-#ifdef __LIBRETRO__
 	if (auto_export_map)
 	{
 		struct retro_memory_descriptor desc = {0};
@@ -2942,7 +2931,6 @@ void CMemory::map_index (uint32 bank_s, uint32 bank_e, uint32 addr_s, uint32 add
 			S9xAppendMapping(&desc);
 		}
 	}
-#endif
 }
 
 void CMemory::map_System (void)
