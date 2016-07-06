@@ -338,7 +338,6 @@ struct CMemory
 	bool8	match_nc (const char *);
 	bool8	match_id (const char *);
 	void	ApplyROMFixes (void);
-	void	CheckForAnyPatch (const char *, bool8, int32 &);
 
 	void	MakeRomInfoText (char *);
 
