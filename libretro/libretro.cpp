@@ -546,6 +546,10 @@ void retro_init(void)
    else
       log_cb = NULL;
 
+   // State that SNES9X supports achievements.
+   bool achievements = true;
+   environ_cb(RETRO_ENVIRONMENT_SET_SUPPORT_ACHIEVEMENTS, &achievements);
+
    memset(&Settings, 0, sizeof(Settings));
    Settings.SuperFXSpeedPerLine = 0.417 * 10.5e6;
    Settings.MouseMaster = TRUE;
