@@ -174,6 +174,7 @@ extern void S9xResetSuperFX(void);
 static void update_variables(void)
 {
    bool reset_sfx = false;
+   bool geometry_update = false;
    char key[256];
    struct retro_variable var;
    struct retro_system_av_info av_info;
@@ -245,27 +246,34 @@ static void update_variables(void)
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
    {
-      if (!strcmp(var.value, "enabled"))
-         use_overscan = false;
-      else if(!strcmp(var.value, "disabled"))
-         use_overscan = true;
+      bool newval = (!strcmp(var.value, "disabled"));
+      if (newval != use_overscan)
+      {
+        use_overscan = newval;
+        geometry_update = true;
+      }
    }
 
    var.key = "snes9x_aspect";
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
    {
-      if (!strcmp(var.value, "8:7 PAR"))
-         use_par = true;
-      else if(!strcmp(var.value, "4:3"))
-         use_par = false;
+      bool newval = (!strcmp(var.value, "8:7 PAR"));
+      if (newval != use_par)
+      {
+        use_par = newval;
+        geometry_update = true;
+      }
    }
 
    if (reset_sfx)
       S9xResetSuperFX();
 
-   retro_get_system_av_info(&av_info);
-   environ_cb(RETRO_ENVIRONMENT_SET_GEOMETRY, &av_info);
+   if (geometry_update)
+   {
+      retro_get_system_av_info(&av_info);
+      environ_cb(RETRO_ENVIRONMENT_SET_GEOMETRY, &av_info);
+   }
 }
 
 static void S9xAudioCallback(void*)
@@ -509,6 +517,8 @@ bool retro_load_game(const struct retro_game_info *game)
 {
    init_descriptors();
    memorydesc_c = 0;
+
+   update_variables();
 
    if(game->data == NULL && game->size == 0 && game->path != NULL)
       rom_loaded = Memory.LoadROM(game->path);
