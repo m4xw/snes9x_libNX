@@ -205,7 +205,7 @@ static void update_variables(void)
 static void S9xAudioCallback(void*)
 {
    // Just pick a big buffer. We won't use it all.
-   static int16_t audio_buf[0x10000];
+   static int16_t audio_buf[0x20000];
 
    S9xFinalizeSamples();
    size_t avail = S9xGetSampleCount();
@@ -585,7 +585,15 @@ void retro_init(void)
       exit(1);
    }
 
-   S9xInitSound(16, 0);
+   //very slow devices will still pop
+   
+   //this needs to be applied to all snes9x cores
+   
+   //increasing the buffer size does not cause extra lag(tested with 1000ms buffer)
+   //bool8 S9xInitSound (int buffer_ms, int lag_ms)
+   
+   S9xInitSound(1000, 0);//just give it a 1 second buffer
+   
    S9xSetSoundMute(FALSE);
    S9xSetSamplesAvailableCallback(S9xAudioCallback, NULL);
 
