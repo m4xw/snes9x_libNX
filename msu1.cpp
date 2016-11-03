@@ -270,10 +270,21 @@ void S9xMSU1Generate(int sample_count)
 					return;
 				}
 			}
+
+			int16 sample = 0;
+			audioFile.get(((char *)&sample), 2);
+			
+			sample = (double)sample * (double)MSU1.MSU1_VOLUME / 255.0;
+
+			*(bufPos++) = sample;
+
+			audioPos += 2;
 		}
 		else
 		{
-			MSU1.MSU1_STATUS &= ~AudioPlaying;
+			MSU1.MSU1_STATUS &= ~(AudioPlaying | AudioRepeating);
+			audioFile.seekg(8);
+			return;
 		}
 	}
 }
