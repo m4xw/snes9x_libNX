@@ -196,6 +196,7 @@
 #include "obc1.h"
 #include "seta.h"
 #include "bsx.h"
+#include "msu1.h"
 
 #define addCyclesInMemoryAccess \
 	if (!CPU.InDMAorHDMA) \
