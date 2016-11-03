@@ -198,6 +198,7 @@
 #endif
 
 #include <ctype.h>
+#include <sys/stat.h>
 
 #include "snes9x.h"
 #include "memmap.h"
@@ -1867,10 +1868,10 @@ bool8 CMemory::LoadMultiCartInt ()
     if(Multi.cartType == 4 && Multi.cartOffsetA == 0) { // try to load bios from file
         Multi.cartOffsetA = 0x40000;
         if(Multi.cartSizeA)
-            memmove(ROM + Multi.cartOffsetA,ROM,Multi.cartOffsetB - Multi.cartOffsetA);
-        else // clear cart A so the bios can detect that it's not present
-            memset(ROM,0,Multi.cartOffsetB);
-        
+            memmove(ROM + Multi.cartOffsetA, ROM, Multi.cartSizeA + Multi.cartSizeB);
+        else if(Multi.cartOffsetB) // clear cart A so the bios can detect that it's not present
+            memset(ROM, 0, Multi.cartOffsetB);
+
         FILE	*fp;
 	    size_t	size;
 	    char	path[PATH_MAX + 1];
