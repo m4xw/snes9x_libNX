@@ -22,7 +22,7 @@
 
   (c) Copyright 2006 - 2007  nitsuja
 
-  (c) Copyright 2009 - 2011  BearOso,
+  (c) Copyright 2009 - 2016  BearOso,
                              OV2
 
   (c) Copyright 2011 - 2016  Hans-Kristian Arntzen,
@@ -122,6 +122,9 @@
   Sound emulator code used in 1.52+
   (c) Copyright 2004 - 2007  Shay Green (gblargg@gmail.com)
 
+  S-SMP emulator code used in 1.54+
+  (c) Copyright 2016         byuu
+
   SH assembler code partly based on x86 assembler code
   (c) Copyright 2002 - 2004  Marcus Comstedt (marcus@mc.pp.se)
 
@@ -135,7 +138,7 @@
   (c) Copyright 2006 - 2007  Shay Green
 
   GTK+ GUI code
-  (c) Copyright 2004 - 2011  BearOso
+  (c) Copyright 2004 - 2016  BearOso
 
   Win32 GUI code
   (c) Copyright 2003 - 2006  blip,
@@ -143,7 +146,7 @@
                              Matthew Kendora,
                              Nach,
                              nitsuja
-  (c) Copyright 2009 - 2011  OV2
+  (c) Copyright 2009 - 2016  OV2
 
   Mac OS GUI code
   (c) Copyright 1998 - 2001  John Stiles
@@ -192,7 +195,7 @@
 #include "display.h"
 #include "hermite_resampler.h"
 
-#include "bapu/snes/snes.hpp"
+#include "snes/snes.hpp"
 
 #define APU_DEFAULT_INPUT_RATE		32000
 #define APU_MINIMUM_SAMPLE_COUNT	512
@@ -335,8 +338,17 @@ bool8 S9xMixSamples (uint8 *buffer, int sample_count)
 				{
 					uint8 *msu_sample = new uint8[sample_count * 2];
 					msu::resampler->read((short *)msu_sample, sample_count);
-					for(uint32 i = 0; i < sample_count; ++i)
-						dest[i] += msu_sample[i];
+					for (uint32 i = 0; i < sample_count * 2; i += 2)
+					{
+						int16 s1, s2;
+						((uint8 *)&s1)[0] = dest[i];
+						((uint8 *)&s1)[1] = dest[i + 1];
+						((uint8 *)&s2)[0] = dest[i];
+						((uint8 *)&s2)[1] = dest[i + 1];
+						s1 += s2;
+						dest[i] = ((uint8 *)&s1)[0];
+						dest[i+1] = ((uint8 *)&s1)[1];
+					}
 				}
 			}
 		}
@@ -478,12 +490,7 @@ bool8 S9xInitSound (int buffer_ms, int lag_ms)
 	if (Settings.SixteenBitSound)
 		spc::buffer_size <<= 1;
 	if (Settings.MSU1)
-	{
-		/* MSU1 is 44.1KHz, 16-bit audio */
-		msu::buffer_size = buffer_ms * 44100 / 1000;
-		msu::buffer_size *= 2; /* Double byte-count for stereo */
-		msu::buffer_size *= 2; /* Double byte-count for 16-bit audio */
-	}
+		msu::buffer_size = (buffer_ms * 44100 / 1000) << 2; // 16-bit, Stereo
 
 	printf("Sound buffer size: %d (%d samples)\n", spc::buffer_size, sample_count);
 
@@ -840,7 +847,6 @@ void S9xAPULoadBlarggState(uint8 *oldblock)
     spc::reference_time = SNES::get_le32(ptr);
     ptr += sizeof(int32);
     spc::remainder = SNES::get_le32(ptr);
-    ptr += sizeof(int32);
 
     // blargg stores CPUIx in regs_in
     memcpy (SNES::cpu.registers, regs_in + 4, 4);
@@ -860,8 +866,12 @@ bool8 S9xSPCDump (const char *filename)
 
 	SNES::smp.save_spc (buf);
 
-	if ((ignore = fwrite(buf, SPC_FILE_SIZE, 1, fs)) <= 0)
+	ignore = fwrite (buf, SPC_FILE_SIZE, 1, fs);
+
+	if (ignore == 0)
+	{
 		fprintf (stderr, "Couldn't write file %s.\n", filename);
+	}
 
 	fclose(fs);
 
