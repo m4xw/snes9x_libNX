@@ -1118,6 +1118,42 @@ static FreezeData	SnapBSX[] =
 	ARRAY_ENTRY(6, test2192, 32, uint8_ARRAY_V)
 };
 
+#undef STRUCT
+#define STRUCT	struct SMSU1
+
+static FreezeData	SnapMSU1[] =
+{
+	INT_ENTRY(9, MSU1_STATUS),
+	INT_ENTRY(9, MSU1_DATA_SEEK),
+	INT_ENTRY(9, MSU1_DATA_POS),
+	INT_ENTRY(9, MSU1_TRACK_SEEK),
+	INT_ENTRY(9, MSU1_CURRENT_TRACK),
+	INT_ENTRY(9, MSU1_RESUME_TRACK),
+	INT_ENTRY(9, MSU1_VOLUME),
+	INT_ENTRY(9, MSU1_CONTROL),
+	INT_ENTRY(9, MSU1_AUDIO_POS),
+	INT_ENTRY(9, MSU1_RESUME_POS)
+};
+
+#undef STRUCT
+#define STRUCT	struct SnapshotScreenshotInfo
+
+static FreezeData	SnapScreenshot[] =
+{
+	INT_ENTRY(6, Width),
+	INT_ENTRY(6, Height),
+	INT_ENTRY(6, Interlaced),
+	ARRAY_ENTRY(6, Data, MAX_SNES_WIDTH * MAX_SNES_HEIGHT * 3, uint8_ARRAY_V)
+};
+
+#undef STRUCT
+#define STRUCT	struct SnapshotMovieInfo
+
+static FreezeData	SnapMovie[] =
+{
+	INT_ENTRY(6, MovieInputDataSize)
+};
+
 static int UnfreezeBlock (STREAM, const char *, uint8 *, int);
 static int UnfreezeBlockCopy (STREAM, const char *, uint8 **, int);
 static int UnfreezeStructCopy (STREAM, const char *, uint8 **, FreezeData *, int, int);
@@ -1346,6 +1382,59 @@ void S9xFreezeToStream (STREAM stream)
 	if (Settings.BS)
 		FreezeStruct(stream, "BSX", &BSX, SnapBSX, COUNT(SnapBSX));
 
+	if (Settings.MSU1)
+		FreezeStruct(stream, "MSU", &MSU1, SnapMSU1, COUNT(SnapMSU1));
+
+	if (Settings.SnapshotScreenshots)
+	{
+		SnapshotScreenshotInfo	*ssi = new SnapshotScreenshotInfo;
+
+		ssi->Width  = min(IPPU.RenderedScreenWidth,  MAX_SNES_WIDTH);
+		ssi->Height = min(IPPU.RenderedScreenHeight, MAX_SNES_HEIGHT);
+		ssi->Interlaced = GFX.DoInterlace;
+
+		uint8	*rowpix = ssi->Data;
+		uint16	*screen = GFX.Screen;
+
+		for (int y = 0; y < ssi->Height; y++, screen += GFX.RealPPL)
+		{
+			for (int x = 0; x < ssi->Width; x++)
+			{
+				uint32	r, g, b;
+
+				DECOMPOSE_PIXEL(screen[x], r, g, b);
+				*(rowpix++) = r;
+				*(rowpix++) = g;
+				*(rowpix++) = b;
+			}
+		}
+
+		memset(rowpix, 0, sizeof(ssi->Data) + ssi->Data - rowpix);
+
+		FreezeStruct(stream, "SHO", ssi, SnapScreenshot, COUNT(SnapScreenshot));
+
+		delete ssi;
+	}
+
+	if (S9xMovieActive())
+	{
+		uint8	*movie_freeze_buf;
+		uint32	movie_freeze_size;
+
+		S9xMovieFreeze(&movie_freeze_buf, &movie_freeze_size);
+		if (movie_freeze_buf)
+		{
+			struct SnapshotMovieInfo mi;
+
+			mi.MovieInputDataSize = movie_freeze_size;
+			FreezeStruct(stream, "MOV", &mi, SnapMovie, COUNT(SnapMovie));
+			FreezeBlock (stream, "MID", movie_freeze_buf, movie_freeze_size);
+
+			delete [] movie_freeze_buf;
+		}
+	}
+
+>>>>>>> 0832528... Add MSU-1 to snapshots.
 	S9xSetSoundMute(FALSE);
 
 	delete [] soundsnapshot;
@@ -1397,6 +1486,7 @@ int S9xUnfreezeFromStream (STREAM stream)
 	uint8	*local_srtc          = NULL;
 	uint8	*local_rtc_data      = NULL;
 	uint8	*local_bsx_data      = NULL;
+	uint8	*local_msu1_data     = NULL;
 	uint8	*local_screenshot    = NULL;
 
 	do
@@ -1501,6 +1591,43 @@ int S9xUnfreezeFromStream (STREAM stream)
 		if (result != SUCCESS && Settings.BS)
 			break;
 
+		result = UnfreezeStructCopy(stream, "MSU", &local_msu1_data, SnapMSU1, COUNT(SnapMSU1), version);
+		if (result != SUCCESS && Settings.MSU1)
+			break;
+
+		result = UnfreezeStructCopy(stream, "SHO", &local_screenshot, SnapScreenshot, COUNT(SnapScreenshot), version);
+
+		SnapshotMovieInfo	mi;
+
+		result = UnfreezeStruct(stream, "MOV", &mi, SnapMovie, COUNT(SnapMovie), version);
+		if (result != SUCCESS)
+		{
+			if (S9xMovieActive())
+			{
+				result = NOT_A_MOVIE_SNAPSHOT;
+				break;
+			}
+		}
+		else
+		{
+			result = UnfreezeBlockCopy(stream, "MID", &local_movie_data, mi.MovieInputDataSize);
+			if (result != SUCCESS)
+			{
+				if (S9xMovieActive())
+				{
+					result = NOT_A_MOVIE_SNAPSHOT;
+					break;
+				}
+			}
+
+			if (S9xMovieActive())
+			{
+				result = S9xMovieUnfreeze(local_movie_data, mi.MovieInputDataSize);
+				if (result != SUCCESS)
+					break;
+			}
+		}
+
 		result = SUCCESS;
 	} while (false);
 
@@ -1586,6 +1713,9 @@ int S9xUnfreezeFromStream (STREAM stream)
 		if (local_bsx_data)
 			UnfreezeStructFromCopy(&BSX, SnapBSX, COUNT(SnapBSX), local_bsx_data, version);
 
+		if (local_msu1_data)
+			UnfreezeStructFromCopy(&MSU1, SnapMSU1, COUNT(SnapMSU1), local_msu1_data, version);
+
 		if (version < SNAPSHOT_VERSION_IRQ)
 		{
 			printf("Converting old snapshot version %d to %d\n...", version, SNAPSHOT_VERSION);
@@ -1667,6 +1797,10 @@ int S9xUnfreezeFromStream (STREAM stream)
 		if (local_bsx_data)
 			S9xBSXPostLoadState();
 
+		if (local_msu1_data)
+			S9xMSU1PostLoadState();
+
+		if (local_movie_data)
 		{
 			for (uint32 y = 0; y < (uint32) (IMAGE_HEIGHT); y++)
 				memset(GFX.Screen + y * GFX.RealPPL, 0, GFX.RealPPL * 2);
