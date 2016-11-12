@@ -219,7 +219,7 @@ void retro_get_system_info(struct retro_system_info *info)
 
     info->library_name = "Snes9x";
     info->library_version = VERSION;
-    info->valid_extensions = "smc|sfc|msu|swc|fig";
+    info->valid_extensions = "smc|sfc|swc|fig";
     info->need_fullpath = false;
     info->block_extract = false;
 }
