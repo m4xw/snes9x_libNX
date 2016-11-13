@@ -39,6 +39,8 @@
 #define RETRO_GAME_TYPE_SUFAMI_TURBO    0x103
 #define RETRO_GAME_TYPE_SUPER_GAME_BOY  0x104
 
+char g_rom_dir[1024];
+char g_basename[1024];
 
 static retro_log_printf_t log_cb = NULL;
 static retro_video_refresh_t video_cb = NULL;
@@ -46,6 +48,40 @@ static retro_audio_sample_t audio_cb = NULL;
 static retro_audio_sample_batch_t audio_batch_cb = NULL;
 static retro_input_poll_t poll_cb = NULL;
 static retro_input_state_t input_state_cb = NULL;
+
+static void extract_basename(char *buf, const char *path, size_t size)
+{
+   const char *base = strrchr(path, '/');
+   if (!base)
+      base = strrchr(path, '\\');
+   if (!base)
+      base = path;
+
+   if (*base == '\\' || *base == '/')
+      base++;
+
+   strncpy(buf, base, size - 1);
+   buf[size - 1] = '\0';
+
+   char *ext = strrchr(buf, '.');
+   if (ext)
+      *ext = '\0';
+}
+
+static void extract_directory(char *buf, const char *path, size_t size)
+{
+   strncpy(buf, path, size - 1);
+   buf[size - 1] = '\0';
+
+   char *base = strrchr(buf, '/');
+   if (!base)
+      base = strrchr(buf, '\\');
+
+   if (base)
+      *base = '\0';
+   else
+      buf[0] = '\0';
+}
 
 void retro_set_video_refresh(retro_video_refresh_t cb)
 {
@@ -442,9 +478,19 @@ bool retro_load_game(const struct retro_game_info *game)
    memorydesc_c = 0;
 
    if(game->data == NULL && game->size == 0 && game->path != NULL)
+   {
       rom_loaded = Memory.LoadROM(game->path);
+   }
    else
+   {
+      if (game->path != NULL)
+      {
+         extract_basename(g_basename,   game->path, sizeof(g_basename));
+         extract_directory(g_rom_dir, game->path, sizeof(g_rom_dir));
+      }
+
       rom_loaded = Memory.LoadROMMem((const uint8_t*)game->data ,game->size);
+   }
 
    int pixel_format = RGB555;
    if(environ_cb) {
@@ -959,8 +1005,44 @@ bool8 S9xContinueUpdate(int width, int height)
 void S9xParsePortConfig(ConfigFile&, int) {}
 void S9xSyncSpeed() {}
 const char* S9xStringInput(const char* in) { return in; }
-const char* S9xGetFilename(const char* in, s9x_getdirtype) { return in; }
-const char* S9xGetDirectory(s9x_getdirtype) { return ""; }
+
+#ifdef _WIN32
+#define SLASH '\\'
+#else
+#define SLASH '/'
+#endif
+
+const char* S9xGetFilename(const char* in, s9x_getdirtype type)
+{
+   static char newpath[2048];
+
+   newpath[0] = '\0';
+
+   switch (type)
+   {
+      case ROMFILENAME_DIR:
+         snprintf(newpath, sizeof(newpath), "%s%c%s%s",
+               g_rom_dir, SLASH, g_basename, in);
+         return newpath;
+      default:
+         break;
+   }
+
+   return in;
+}
+
+const char* S9xGetDirectory(s9x_getdirtype type)
+{
+   switch (type)
+   {
+      case ROMFILENAME_DIR:
+         return g_rom_dir;
+      default:
+         break;
+   }
+
+   return "";
+}
 void S9xInitInputDevices() {}
 const char* S9xChooseFilename(unsigned char) { return ""; }
 void S9xHandlePortCommand(s9xcommand_t, short, short) {}

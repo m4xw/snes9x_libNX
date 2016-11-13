@@ -1264,7 +1264,9 @@ static bool8 is_GNEXT_Add_On (const uint8 *data, uint32 size)
 static bool8 MsuRomExists (void)
 {
 	struct stat buf;
-	return (stat(S9xGetFilename(".msu", ROMFILENAME_DIR), &buf) == 0);
+   const char *path = S9xGetFilename(".msu", ROMFILENAME_DIR);
+
+	return (stat(path, &buf) == 0);
 }
 
 int CMemory::ScoreHiROM (bool8 skip_header, int32 romoff)
