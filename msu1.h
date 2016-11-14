@@ -209,19 +209,19 @@ struct SMSU1
 };
 
 enum SMSU1_FLAG : uint8 {
-	Revision		= 0x02,	//max: 0x07
+	Revision		   = 0x02,	//max: 0x07
 	AudioResume		= 0x04,
 	AudioError		= 0x08,
 	AudioPlaying	= 0x10,
 	AudioRepeating	= 0x20,
 	AudioBusy		= 0x40,
-	DataBusy		= 0x80,
+	DataBusy		   = 0x80
 };
 
 enum SMSU1_CMD : uint8 {
-	Play			= 0x01,
+	Play			   = 0x01,
 	Repeat			= 0x02,
-	Resume			= 0x04,
+	Resume			= 0x04
 };
 
 extern struct SMSU1	MSU1;
