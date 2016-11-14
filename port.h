@@ -249,6 +249,8 @@ typedef uint64_t			uint64;
 #endif
 #endif
 
+#define S9xDisplayString	DisplayStringFromBottom
+
 #if defined(__WIN32__)
 
 #ifndef _MSC_VER
@@ -257,14 +259,11 @@ typedef uint64_t			uint64;
 #define strncasecmp	strnicmp
 #endif
 
-void WinDisplayStringFromBottom(const char *string, int linesFromBottom, int pixelsFromLeft, bool allowWrap);
-#define S9xDisplayString	WinDisplayStringFromBottom
 void SetInfoDlgColor(unsigned char, unsigned char, unsigned char);
 #define SET_UI_COLOR(r,g,b) SetInfoDlgColor(r,g,b)
 #else
 void _splitpath (const char *, char *, char *, char *, char *);
 void _makepath (char *, const char *, const char *, const char *, const char *);
-#define S9xDisplayString	DisplayStringFromBottom
 #endif
 
 #if defined(__DJGPP) || defined(__WIN32__)
