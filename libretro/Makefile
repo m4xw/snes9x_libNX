@@ -223,7 +223,7 @@ CXXFLAGS += -fno-exceptions
 endif
 
 CXXFLAGS	+= $(CODE_DEFINES) -fno-rtti -pedantic $(WARNINGS_DEFINES) $(fpic)
-CXXFLAGS	+= -DHAVE_STRINGS_H -DHAVE_STDINT_H -DRIGHTSHIFT_IS_SAR -D__LIBRETRO__
+CXXFLAGS	+= -DHAVE_STRINGS_H -DRIGHTSHIFT_IS_SAR -D__LIBRETRO__
 CFLAGS		= $(CXXFLAGS)
 
 ifeq ($(platform), theos_ios)
