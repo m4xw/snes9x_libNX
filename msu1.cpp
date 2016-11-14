@@ -196,8 +196,6 @@
 #include <fstream>
 #include <cerrno>
 
-#define APU_DEFAULT_INPUT_RATE		32000
-
 #undef CLAMP
 #undef SHORT_CLAMP
 #define CLAMP(x, low, high) (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
