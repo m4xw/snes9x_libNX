@@ -208,7 +208,7 @@ struct SMSU1
 	uint32	MSU1_RESUME_POS;
 };
 
-enum SMSU1_FLAG : uint8 {
+enum SMSU1_FLAG {
 	Revision		   = 0x02,	//max: 0x07
 	AudioResume		= 0x04,
 	AudioError		= 0x08,
@@ -218,7 +218,7 @@ enum SMSU1_FLAG : uint8 {
 	DataBusy		   = 0x80
 };
 
-enum SMSU1_CMD : uint8 {
+enum SMSU1_CMD {
 	Play			   = 0x01,
 	Repeat			= 0x02,
 	Resume			= 0x04
