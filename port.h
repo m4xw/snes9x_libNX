@@ -252,23 +252,23 @@ typedef uint64_t			uint64;
 #endif
 #endif
 
-#ifndef __WIN32__
-void _splitpath (const char *, char *, char *, char *, char *);
-void _makepath (char *, const char *, const char *, const char *, const char *);
-#define S9xDisplayString	DisplayStringFromBottom
-#else   // __WIN32__
+#if defined(__WIN32__)
+
+#ifndef _MSC_VER
 #define snprintf _snprintf
 #define strcasecmp	stricmp
 #define strncasecmp	strnicmp
-#ifndef __WIN32_LIBSNES__
+#endif
+
 void WinDisplayStringFromBottom(const char *string, int linesFromBottom, int pixelsFromLeft, bool allowWrap);
 #define S9xDisplayString	WinDisplayStringFromBottom
 void SetInfoDlgColor(unsigned char, unsigned char, unsigned char);
 #define SET_UI_COLOR(r,g,b) SetInfoDlgColor(r,g,b)
-#else   // __WIN32_LIBSNES__
+#else
+void _splitpath (const char *, char *, char *, char *, char *);
+void _makepath (char *, const char *, const char *, const char *, const char *);
 #define S9xDisplayString	DisplayStringFromBottom
-#endif  // __WIN32_LIBSNES__
-#endif  // __WIN32__
+#endif
 
 #if defined(__DJGPP) || defined(__WIN32__)
 #define SLASH_STR	"\\"

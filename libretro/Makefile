@@ -192,7 +192,7 @@ else
 	CC = gcc
 	CXX = g++
 	SHARED := -shared -static-libgcc -static-libstdc++ -s -Wl,--version-script=link.T
-	CXXFLAGS += -D__WIN32__ -D__WIN32_LIBSNES__
+	CXXFLAGS += -D__WIN32__
 
 endif
 
