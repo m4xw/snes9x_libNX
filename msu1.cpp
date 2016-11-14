@@ -198,6 +198,11 @@
 
 #define APU_DEFAULT_INPUT_RATE		32000
 
+#undef CLAMP
+#undef SHORT_CLAMP
+#define CLAMP(x, low, high) (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
+#define SHORT_CLAMP(n) ((short) CLAMP((n), -32768, 32767))
+
 std::ifstream dataFile, audioFile;
 uint32 audioLoopPos;
 uint32 partial_samples;
@@ -289,7 +294,7 @@ void S9xMSU1Generate(int sample_count)
 			{
 				sample = (int16)((double)sample * (double)MSU1.MSU1_VOLUME / 255.0);
 
-				*(bufPos++) = sample;
+				*(bufPos++) = SHORT_CLAMP(sample);
 				MSU1.MSU1_AUDIO_POS += 2;
 				partial_samples -= 320405;
 			}
@@ -298,7 +303,7 @@ void S9xMSU1Generate(int sample_count)
 			{
 				sample = (int16)((double)sample * (double)MSU1.MSU1_VOLUME / 255.0);
 
-				*(bufPos++) = sample;
+				*(bufPos++) = SHORT_CLAMP(sample);
 				MSU1.MSU1_AUDIO_POS += 2;
 				partial_samples -= 320405;
 
