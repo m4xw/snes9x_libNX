@@ -259,8 +259,6 @@ typedef uint64_t			uint64;
 #define strncasecmp	strnicmp
 #endif
 
-void SetInfoDlgColor(unsigned char, unsigned char, unsigned char);
-#define SET_UI_COLOR(r,g,b) SetInfoDlgColor(r,g,b)
 #else
 void _splitpath (const char *, char *, char *, char *, char *);
 void _makepath (char *, const char *, const char *, const char *, const char *);
