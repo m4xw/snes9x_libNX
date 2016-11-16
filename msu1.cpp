@@ -236,10 +236,12 @@ bool AudioOpen()
 		audioLoopPos = GET_LE32(&audioLoopPos);
 		audioLoopPos <<= 2;
 		audioLoopPos += 8;
+		
+		MSU1.MSU1_STATUS &= ~AudioError;
+		return true;
 	}
 
-	MSU1.MSU1_STATUS &= ~AudioError;
-	return true;
+	return false;
 }
 
 bool DataOpen()
