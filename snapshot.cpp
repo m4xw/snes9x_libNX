@@ -1289,6 +1289,8 @@ void S9xFreezeToStream (STREAM stream)
 	char	buffer[1024];
 	uint8	*soundsnapshot = new uint8[SPC_SAVE_STATE_BLOCK_SIZE];
 
+        S9xPackStatus();
+
 	sprintf(buffer, "%s:%04d\n", SNAPSHOT_MAGIC, SNAPSHOT_VERSION);
 	WRITE_STREAM(buffer, strlen(buffer), stream);
 
