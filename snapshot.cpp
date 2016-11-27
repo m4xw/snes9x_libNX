@@ -389,6 +389,17 @@ static FreezeData	SnapCPU[] =
 };
 
 #undef STRUCT
+#define STRUCT  struct SICPU
+
+static FreezeData       SnapICPU[] =
+{
+	INT_ENTRY(SNAPSHOT_VERSION_ICPU, _Carry),
+	INT_ENTRY(SNAPSHOT_VERSION_ICPU, _Zero),
+	INT_ENTRY(SNAPSHOT_VERSION_ICPU, _Negative),
+	INT_ENTRY(SNAPSHOT_VERSION_ICPU, _Overflow)
+};
+
+#undef STRUCT
 #define STRUCT	struct SRegisters
 
 static FreezeData	SnapRegisters[] =
@@ -1297,6 +1308,8 @@ void S9xFreezeToStream (STREAM stream)
 
 	FreezeStruct(stream, "CPU", &CPU, SnapCPU, COUNT(SnapCPU));
 
+        FreezeStruct(stream, "ICP", &ICPU, SnapICPU, COUNT(SnapICPU));
+
 	FreezeStruct(stream, "REG", &Registers, SnapRegisters, COUNT(SnapRegisters));
 
 	FreezeStruct(stream, "PPU", &PPU, SnapPPU, COUNT(SnapPPU));
@@ -1400,6 +1413,7 @@ int S9xUnfreezeFromStream (STREAM stream)
 		return (result);
 
 	uint8	*local_cpu           = NULL;
+        uint8   *local_icpu          = NULL;
 	uint8	*local_registers     = NULL;
 	uint8	*local_ppu           = NULL;
 	uint8	*local_dma           = NULL;
@@ -1432,6 +1446,13 @@ int S9xUnfreezeFromStream (STREAM stream)
 		result = UnfreezeStructCopy(stream, "CPU", &local_cpu, SnapCPU, COUNT(SnapCPU), version);
 		if (result != SUCCESS)
 			break;
+
+                if (version >= SNAPSHOT_VERSION_ICPU)
+                {
+                    result = UnfreezeStructCopy(stream, "ICPU", &local_icpu, SnapICPU, COUNT(SnapICPU), version);
+                    if (result != SUCCESS)
+                        break;
+                }
 
 		result = UnfreezeStructCopy(stream, "REG", &local_registers, SnapRegisters, COUNT(SnapRegisters), version);
 		if (result != SUCCESS)
@@ -1549,6 +1570,9 @@ int S9xUnfreezeFromStream (STREAM stream)
 
 		UnfreezeStructFromCopy(&CPU, SnapCPU, COUNT(SnapCPU), local_cpu, version);
 
+                if (version >= SNAPSHOT_VERSION_ICPU)
+                    UnfreezeStructFromCopy(&ICPU, SnapICPU, COUNT(SnapICPU), local_icpu, version);
+
 		UnfreezeStructFromCopy(&Registers, SnapRegisters, COUNT(SnapRegisters), local_registers, version);
 
 		UnfreezeStructFromCopy(&PPU, SnapPPU, COUNT(SnapPPU), local_ppu, version);
@@ -1658,7 +1682,8 @@ int S9xUnfreezeFromStream (STREAM stream)
 		ICPU.ShiftedPB = Registers.PB << 16;
 		ICPU.ShiftedDB = Registers.DB << 16;
 		S9xSetPCBase(Registers.PBPC);
-		S9xUnpackStatus();
+                if (version < SNAPSHOT_VERSION_ICPU)
+                    S9xUnpackStatus();
 		S9xFixCycles();
 
 		for (int d = 0; d < 8; d++)
@@ -1762,6 +1787,7 @@ int S9xUnfreezeFromStream (STREAM stream)
 	}
 
 	if (local_cpu)				delete [] local_cpu;
+	if (local_icpu)				delete [] local_icpu;
 	if (local_registers)		delete [] local_registers;
 	if (local_ppu)				delete [] local_ppu;
 	if (local_dma)				delete [] local_dma;
