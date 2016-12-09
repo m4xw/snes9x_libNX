@@ -23,6 +23,10 @@ CXX			?= g++
 CC			?= gcc
 TARGET_NAME	= snes9x
 LIBM		= -lm
+GIT_VERSION := " $(shell git rev-parse --short HEAD || echo unknown)"
+ifneq ($(GIT_VERSION)," unknown")
+	CXXFLAGS += -DGIT_VERSION=\"$(GIT_VERSION)\"
+endif
 
 ifeq ($(LAGFIX),1)
 CFLAGS   += -DLAGFIX

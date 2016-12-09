@@ -254,7 +254,10 @@ void retro_get_system_info(struct retro_system_info *info)
     memset(info,0,sizeof(retro_system_info));
 
     info->library_name = "Snes9x";
-    info->library_version = VERSION;
+#ifndef GIT_VERSION
+#define GIT_VERSION ""
+#endif
+    info->library_version = VERSION GIT_VERSION;
     info->valid_extensions = "smc|sfc|swc|fig";
     info->need_fullpath = false;
     info->block_extract = false;
