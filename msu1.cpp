@@ -195,7 +195,7 @@
 #include "msu1.h"
 #include "apu/bapu/dsp/blargg_endian.h"
 #include <fstream>
-#include <cerrno>
+#include <sys/stat.h>
 
 #undef CLAMP
 #undef SHORT_CLAMP
