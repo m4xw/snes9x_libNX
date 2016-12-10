@@ -482,7 +482,7 @@ bool8 S9xInitSound (int buffer_ms, int lag_ms)
 		spc::buffer_size <<= 1;
 	if (Settings.SixteenBitSound)
 		spc::buffer_size <<= 1;
-	msu::buffer_size = ((buffer_ms * 44100 / 1000) << 2) * 441000 / 320400; // Always 16-bit, Stereo
+   msu::buffer_size = ((buffer_ms * 44100 / 1000) * 44100 / 32040) << 2; // Always 16-bit, Stereo
 
 	printf("Sound buffer size: %d (%d samples)\n", spc::buffer_size, sample_count);
 

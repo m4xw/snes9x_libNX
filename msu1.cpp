@@ -285,9 +285,9 @@ void S9xMSU1Init(void)
 
 void S9xMSU1Generate(int sample_count)
 {
-	partial_samples += 441000 * sample_count;
+	partial_samples += 44100 * sample_count;
 
-	while ((bufPos < bufEnd) && (MSU1.MSU1_STATUS & AudioPlaying) && partial_samples > 320405)
+	while ((bufPos < bufEnd) && (MSU1.MSU1_STATUS & AudioPlaying) && partial_samples > 32040)
 	{
 		if (audioFile.good())
 		{
@@ -298,7 +298,7 @@ void S9xMSU1Generate(int sample_count)
 
 				*(bufPos++) = SHORT_CLAMP(sample);
 				MSU1.MSU1_AUDIO_POS += 2;
-				partial_samples -= 320405;
+				partial_samples -= 32040;
 			}
 			else
 			if (audioFile.eof())
@@ -307,7 +307,7 @@ void S9xMSU1Generate(int sample_count)
 
 				*(bufPos++) = SHORT_CLAMP(sample);
 				MSU1.MSU1_AUDIO_POS += 2;
-				partial_samples -= 320405;
+				partial_samples -= 32040;
 
 				if (MSU1.MSU1_STATUS & AudioRepeating)
 				{
