@@ -1529,6 +1529,16 @@ bool8 CMemory::LoadROMMem (const uint8 *source, uint32 sourceSize)
         return FALSE;
 
     strcpy(ROMFilename,"MemoryROM");
+   
+    //allows headered roms to be loaded from ram instead of file
+    uint32	calc_size = (sourceSize / 0x2000) * 0x2000;
+    if ((sourceSize - calc_size == 512 && !Settings.ForceNoHeader) || Settings.ForceHeader)
+    {
+       source += 512;
+       sourceSize -= 512;
+       S9xMessage(S9X_INFO, S9X_HEADERS_INFO, "Found ROM file header (and ignored it).");
+    }
+    //end of header fix
 
     do
     {
