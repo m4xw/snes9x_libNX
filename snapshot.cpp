@@ -1135,6 +1135,23 @@ static FreezeData	SnapBSX[] =
 };
 
 #undef STRUCT
+#define STRUCT	struct SMSU1
+
+static FreezeData	SnapMSU1[] =
+{
+	INT_ENTRY(9, MSU1_STATUS),
+	INT_ENTRY(9, MSU1_DATA_SEEK),
+	INT_ENTRY(9, MSU1_DATA_POS),
+	INT_ENTRY(9, MSU1_TRACK_SEEK),
+	INT_ENTRY(9, MSU1_CURRENT_TRACK),
+	INT_ENTRY(9, MSU1_RESUME_TRACK),
+	INT_ENTRY(9, MSU1_VOLUME),
+	INT_ENTRY(9, MSU1_CONTROL),
+	INT_ENTRY(9, MSU1_AUDIO_POS),
+	INT_ENTRY(9, MSU1_RESUME_POS)
+};
+
+#undef STRUCT
 #define STRUCT	struct SnapshotScreenshotInfo
 
 static FreezeData	SnapScreenshot[] =
@@ -1377,6 +1394,9 @@ void S9xFreezeToStream (STREAM stream)
 	if (Settings.BS)
 		FreezeStruct(stream, "BSX", &BSX, SnapBSX, COUNT(SnapBSX));
 
+    if (Settings.MSU1)
+        FreezeStruct(stream, "MSU", &MSU1, SnapMSU1, COUNT(SnapMSU1));
+
 	delete [] soundsnapshot;
 }
 
@@ -1426,6 +1446,7 @@ int S9xUnfreezeFromStream (STREAM stream)
 	uint8	*local_srtc          = NULL;
 	uint8	*local_rtc_data      = NULL;
 	uint8	*local_bsx_data      = NULL;
+	uint8	*local_msu1_data      = NULL;
 	uint8	*local_screenshot    = NULL;
 	uint8	*local_movie_data    = NULL;
 
@@ -1531,6 +1552,10 @@ int S9xUnfreezeFromStream (STREAM stream)
 		if (result != SUCCESS && Settings.BS)
 			break;
 
+		result = UnfreezeStructCopy(stream, "MSU", &local_msu1_data, SnapMSU1, COUNT(SnapMSU1), version);
+		if (result != SUCCESS && Settings.MSU1)
+			break;
+
 		result = UnfreezeStructCopy(stream, "SHO", &local_screenshot, SnapScreenshot, COUNT(SnapScreenshot), version);
 
 		SnapshotMovieInfo	mi;
@@ -1622,6 +1647,9 @@ int S9xUnfreezeFromStream (STREAM stream)
 		if (local_bsx_data)
 			UnfreezeStructFromCopy(&BSX, SnapBSX, COUNT(SnapBSX), local_bsx_data, version);
 
+		if (local_msu1_data)
+			UnfreezeStructFromCopy(&MSU1, SnapMSU1, COUNT(SnapMSU1), local_msu1_data, version);
+
 		if (version < SNAPSHOT_VERSION_IRQ)
 		{
 			printf("Converting old snapshot version %d to %d\n...", version, SNAPSHOT_VERSION);
@@ -1702,6 +1730,9 @@ int S9xUnfreezeFromStream (STREAM stream)
 
 		if (local_bsx_data)
 			S9xBSXPostLoadState();
+
+		if (local_msu1_data)
+			S9xMSU1PostLoadState();
 
 		if (local_screenshot)
 		{
