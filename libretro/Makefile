@@ -178,7 +178,7 @@ else ifeq ($(platform), emscripten)
 # ARM
 else ifneq (,$(findstring armv,$(platform)))
 	TARGET := $(TARGET_NAME)_libretro.so
-	SHARED := -shared -Wl,--no-undefined
+	SHARED := -shared -Wl,--version-script=link.T
 	fpic := -fPIC
 	CC ?= gcc
 	CXX ?= g++
