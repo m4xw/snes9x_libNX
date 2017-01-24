@@ -477,13 +477,14 @@ static void init_descriptors(void)
 
 bool retro_load_game(const struct retro_game_info *game)
 {
+   if (!game)
+      return false;
+
    init_descriptors();
    memorydesc_c = 0;
 
    if(game->data == NULL && game->size == 0 && game->path != NULL)
-   {
       rom_loaded = Memory.LoadROM(game->path);
-   }
    else
    {
       if (game->path != NULL)
@@ -497,10 +498,10 @@ bool retro_load_game(const struct retro_game_info *game)
 
    int pixel_format = RGB555;
    if(environ_cb) {
-       pixel_format = RGB565;
-       enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_RGB565;
-       if (!environ_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &fmt))
-           pixel_format = RGB555;
+      pixel_format = RGB565;
+      enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_RGB565;
+      if (!environ_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &fmt))
+         pixel_format = RGB555;
    }
    S9xGraphicsDeinit();
    S9xSetRenderPixelFormat(pixel_format);
