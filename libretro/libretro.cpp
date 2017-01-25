@@ -477,9 +477,6 @@ static void init_descriptors(void)
 
 bool retro_load_game(const struct retro_game_info *game)
 {
-   if (!game)
-      return false;
-
    init_descriptors();
    memorydesc_c = 0;
 
