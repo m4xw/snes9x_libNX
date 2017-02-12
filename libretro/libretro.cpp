@@ -120,21 +120,21 @@ void retro_set_environment(retro_environment_t cb)
       // Changing "Show layer 1" is fine, but don't change "layer_1"/etc or the possible values ("Yes|No").
       // Adding more variables and rearranging them is safe.
       { "snes9x_overclock", "SuperFX Overclock; disabled|40MHz|60MHz|80MHz|100MHz" },
-      { "snes9x_layer_1", "Show layer 1; Yes|No" },
-      { "snes9x_layer_2", "Show layer 2; Yes|No" },
-      { "snes9x_layer_3", "Show layer 3; Yes|No" },
-      { "snes9x_layer_4", "Show layer 4; Yes|No" },
-      { "snes9x_layer_5", "Show sprite layer; Yes|No" },
-      { "snes9x_gfx_clip", "Enable graphic clip windows; Yes|No" },
-      { "snes9x_gfx_transp", "Enable transparency effects; Yes|No" },
-      { "snes9x_sndchan_1", "Enable sound channel 1; Yes|No" },
-      { "snes9x_sndchan_2", "Enable sound channel 2; Yes|No" },
-      { "snes9x_sndchan_3", "Enable sound channel 3; Yes|No" },
-      { "snes9x_sndchan_4", "Enable sound channel 4; Yes|No" },
-      { "snes9x_sndchan_5", "Enable sound channel 5; Yes|No" },
-      { "snes9x_sndchan_6", "Enable sound channel 6; Yes|No" },
-      { "snes9x_sndchan_7", "Enable sound channel 7; Yes|No" },
-      { "snes9x_sndchan_8", "Enable sound channel 8; Yes|No" },
+      { "snes9x_layer_1", "Show layer 1; enabled|disabled" },
+      { "snes9x_layer_2", "Show layer 2; enabled|disabled" },
+      { "snes9x_layer_3", "Show layer 3; enabled|disabled" },
+      { "snes9x_layer_4", "Show layer 4; enabled|disabled" },
+      { "snes9x_layer_5", "Show sprite layer; enabled|disabled" },
+      { "snes9x_gfx_clip", "Enable graphic clip windows; enabled|disabled" },
+      { "snes9x_gfx_transp", "Enable transparency effects; enabled|disabled" },
+      { "snes9x_sndchan_1", "Enable sound channel 1; enabled|disabled" },
+      { "snes9x_sndchan_2", "Enable sound channel 2; enabled|disabled" },
+      { "snes9x_sndchan_3", "Enable sound channel 3; enabled|disabled" },
+      { "snes9x_sndchan_4", "Enable sound channel 4; enabled|disabled" },
+      { "snes9x_sndchan_5", "Enable sound channel 5; enabled|disabled" },
+      { "snes9x_sndchan_6", "Enable sound channel 6; enabled|disabled" },
+      { "snes9x_sndchan_7", "Enable sound channel 7; enabled|disabled" },
+      { "snes9x_sndchan_8", "Enable sound channel 8; enabled|disabled" },
       { NULL, NULL },
    };
 
@@ -210,7 +210,7 @@ static void update_variables(void)
    {
       key[strlen("snes9x_sndchan_")]='1'+i;
       var.value=NULL;
-      if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value && var.value[0]=='N') disabled_channels|=1<<i;
+      if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value && var.value[0]=='d') disabled_channels|=1<<i;
    }
    S9xSetSoundControl(disabled_channels^0xFF);
 
@@ -221,18 +221,18 @@ static void update_variables(void)
    {
       key[strlen("snes9x_layer_")]='1'+i;
       var.value=NULL;
-      if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value && var.value[0]=='N') disabled_layers|=1<<i;
+      if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value && var.value[0]=='d') disabled_layers|=1<<i;
    }
    Settings.BG_Forced=disabled_layers;
 
    //for some reason, Transparency seems to control both the fixed color and the windowing registers?
    var.key="snes9x_gfx_clip";
    var.value=NULL;
-   Settings.DisableGraphicWindows=(environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value && var.value[0]=='N');
+   Settings.DisableGraphicWindows=(environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value && var.value[0]=='d');
 
    var.key="snes9x_gfx_transp";
    var.value=NULL;
-   Settings.Transparency=!(environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value && var.value[0]=='N');
+   Settings.Transparency=!(environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value && var.value[0]=='d');
 
    if (reset_sfx)
       S9xResetSuperFX();
