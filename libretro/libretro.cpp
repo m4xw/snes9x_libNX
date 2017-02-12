@@ -210,7 +210,8 @@ static void update_variables(void)
    {
       key[strlen("snes9x_sndchan_")]='1'+i;
       var.value=NULL;
-      if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value[0]=='d') disabled_channels|=1<<i;
+      if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && !strcmp("disabled", var.value)) 
+         disabled_channels|=1<<i;
    }
    S9xSetSoundControl(disabled_channels^0xFF);
 
