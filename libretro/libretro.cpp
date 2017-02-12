@@ -221,18 +221,19 @@ static void update_variables(void)
    {
       key[strlen("snes9x_layer_")]='1'+i;
       var.value=NULL;
-      if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value && var.value[0]=='d') disabled_layers|=1<<i;
+      if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value && !strcmp("disabled", var.value)) 
+         disabled_layers|=1<<i;
    }
    Settings.BG_Forced=disabled_layers;
 
    //for some reason, Transparency seems to control both the fixed color and the windowing registers?
    var.key="snes9x_gfx_clip";
    var.value=NULL;
-   Settings.DisableGraphicWindows=(environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value && var.value[0]=='d');
+   Settings.DisableGraphicWindows=(environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value && !strcmp("disabled", var.value));
 
    var.key="snes9x_gfx_transp";
    var.value=NULL;
-   Settings.Transparency=!(environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value && var.value[0]=='d');
+   Settings.Transparency=!(environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value && !strcmp("disabled", var.value));
 
    if (reset_sfx)
       S9xResetSuperFX();
