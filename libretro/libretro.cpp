@@ -39,6 +39,9 @@
 #define RETRO_GAME_TYPE_SUFAMI_TURBO    0x103
 #define RETRO_GAME_TYPE_SUPER_GAME_BOY  0x104
 
+#define SNES_8_7_PAR (SNES_WIDTH * (8.0f / 7.0f)) / (use_overscan ? SNES_HEIGHT_EXTENDED : SNES_HEIGHT)
+#define SNES_4_3 4.0f / 3.0f
+
 char g_rom_dir[1024];
 char g_basename[1024];
 
@@ -110,6 +113,7 @@ void retro_set_input_state(retro_input_state_t cb)
 
 static retro_environment_t environ_cb;
 static bool use_overscan = false;
+static bool use_par = true;
 static bool rom_loaded = false;
 void retro_set_environment(retro_environment_t cb)
 {
@@ -135,6 +139,8 @@ void retro_set_environment(retro_environment_t cb)
       { "snes9x_sndchan_6", "Enable sound channel 6; enabled|disabled" },
       { "snes9x_sndchan_7", "Enable sound channel 7; enabled|disabled" },
       { "snes9x_sndchan_8", "Enable sound channel 8; enabled|disabled" },
+      { "snes9x_overscan", "Crop Overscan; enabled|disabled" },
+      { "snes9x_aspect", "Core-provided aspect ratio; 8:7 PAR|4:3" },
       { NULL, NULL },
    };
 
@@ -168,8 +174,10 @@ extern void S9xResetSuperFX(void);
 static void update_variables(void)
 {
    bool reset_sfx = false;
+   bool geometry_update = false;
    char key[256];
    struct retro_variable var;
+   struct retro_system_av_info av_info;
    var.key = "snes9x_overclock";
    var.value = NULL;
 
@@ -236,8 +244,38 @@ static void update_variables(void)
    var.value=NULL;
    Settings.Transparency=!(environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && !strcmp("disabled", var.value));
 
+   var.key = "snes9x_overscan";
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      bool newval = (!strcmp(var.value, "disabled"));
+      if (newval != use_overscan)
+      {
+        use_overscan = newval;
+        geometry_update = true;
+      }
+   }
+
+   var.key = "snes9x_aspect";
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      bool newval = (!strcmp(var.value, "8:7 PAR"));
+      if (newval != use_par)
+      {
+        use_par = newval;
+        geometry_update = true;
+      }
+   }
+
    if (reset_sfx)
       S9xResetSuperFX();
+
+   if (geometry_update)
+   {
+      retro_get_system_av_info(&av_info);
+      environ_cb(RETRO_ENVIRONMENT_SET_GEOMETRY, &av_info);
+   }
 }
 
 static void S9xAudioCallback(void*)
@@ -272,7 +310,7 @@ void retro_get_system_av_info(struct retro_system_av_info *info)
     info->geometry.base_height = use_overscan ? SNES_HEIGHT_EXTENDED : SNES_HEIGHT;
     info->geometry.max_width = MAX_SNES_WIDTH;
     info->geometry.max_height = MAX_SNES_HEIGHT;
-    info->geometry.aspect_ratio = 4.0f / 3.0f;
+    info->geometry.aspect_ratio = use_par ? SNES_8_7_PAR : SNES_4_3 ;
     info->timing.sample_rate = 32040;
     info->timing.fps = retro_get_region() == RETRO_REGION_NTSC ? 21477272.0 / 357366.0 : 21281370.0 / 425568.0;
 }
@@ -482,6 +520,8 @@ bool retro_load_game(const struct retro_game_info *game)
    init_descriptors();
    memorydesc_c = 0;
 
+   update_variables();
+
    if(game->data == NULL && game->size == 0 && game->path != NULL)
       rom_loaded = Memory.LoadROM(game->path);
    else
@@ -584,11 +624,6 @@ static void check_system_specs(void)
 void retro_init(void)
 {
    struct retro_log_callback log;
-   if (environ_cb)
-   {
-      if (!environ_cb(RETRO_ENVIRONMENT_GET_OVERSCAN, &use_overscan))
-         use_overscan = false;
-   }
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &log))
       log_cb = log.log;
