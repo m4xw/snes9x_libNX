@@ -236,14 +236,14 @@ $(TARGET): $(OBJECTS)
 ifeq ($(STATIC_LINKING), 1)
 	$(AR) rcs $@ $(OBJECTS)
 else
-	$(CXX) $(fpic) $(SHARED) $(INCFLAGS) -o $@ $(OBJECTS) $(LIBM)
+	$(CXX) $(fpic) $(SHARED) $(INCFLAGS) -o $@ $(OBJECTS) $(LDFLAGS) $(LIBM)
 endif
 
 %.o: %.cpp 
-	$(CXX) $(INCFLAGS) $(CXXFLAGS) -c -o $@ $<
+	$(CXX) $(INCFLAGS) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
 
 %.o: %.c
-	$(CC) $(INCFLAGS) $(CFLAGS) -c -o $@ $<
+	$(CC) $(INCFLAGS) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 clean:
 	rm -f $(OBJECTS) $(TARGET)
