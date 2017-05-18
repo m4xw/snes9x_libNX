@@ -840,7 +840,7 @@ void S9xSelectTileConverter (int depth, bool8 hires, bool8 sub, bool8 mosaic)
 #define DRAW_TILE() \
 	uint8			*pCache; \
 	register int32	l; \
-	register uint8	*bp, Pix, w, n;; \
+	register uint8	*bp, Pix, w, n; \
 	\
 	GET_CACHED_TILE(); \
 	if (IS_BLANK_TILE()) \
@@ -858,7 +858,7 @@ void S9xSelectTileConverter (int depth, bool8 hires, bool8 sub, bool8 mosaic)
 				DRAW_PIXEL(n, Pix = bp[n]); \
 				n++; \
 			} while (--w > 0); \
-		}\
+		} \
 	} \
 	else \
 	if (!(Tile & V_FLIP)) \
