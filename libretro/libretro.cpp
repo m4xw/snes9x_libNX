@@ -381,7 +381,7 @@ void retro_cheat_set(unsigned index, bool enabled, const char *codeline)
    char codeCopy[256];
    char* code;
 
-   if (codeline == '\0') return;
+   if (codeline == (char *)'\0') return;
 
    strcpy(codeCopy,codeline);
    code=strtok(codeCopy,"+,.; ");
