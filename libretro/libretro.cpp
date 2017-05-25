@@ -39,7 +39,6 @@
 #define RETRO_GAME_TYPE_SUFAMI_TURBO    0x103
 #define RETRO_GAME_TYPE_SUPER_GAME_BOY  0x104
 
-#define SNES_8_7_PAR (SNES_WIDTH * (8.0f / 7.0f)) / (use_overscan ? SNES_HEIGHT_EXTENDED : SNES_HEIGHT)
 #define SNES_4_3 4.0f / 3.0f
 
 char g_rom_dir[1024];
@@ -113,7 +112,7 @@ void retro_set_input_state(retro_input_state_t cb)
 
 static retro_environment_t environ_cb;
 static bool use_overscan = false;
-static bool use_par = true;
+static unsigned aspect_ratio_mode = 0;
 static bool rom_loaded = false;
 void retro_set_environment(retro_environment_t cb)
 {
@@ -140,7 +139,7 @@ void retro_set_environment(retro_environment_t cb)
       { "snes9x_sndchan_7", "Enable sound channel 7; enabled|disabled" },
       { "snes9x_sndchan_8", "Enable sound channel 8; enabled|disabled" },
       { "snes9x_overscan", "Crop Overscan; enabled|disabled" },
-      { "snes9x_aspect", "Core-provided aspect ratio; 8:7 PAR|4:3" },
+      { "snes9x_aspect", "Preferred aspect ratio; auto|ntsc|pal|4:3" },
       { NULL, NULL },
    };
 
@@ -260,10 +259,17 @@ static void update_variables(void)
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
    {
-      bool newval = (!strcmp(var.value, "8:7 PAR"));
-      if (newval != use_par)
+      unsigned newval = 0;
+      if (strcmp(var.value, "ntsc") == 0)
+        newval = 1;
+      else if (strcmp(var.value, "pal") == 0)
+        newval = 2;
+      else if (strcmp(var.value, "4:3") == 0)
+        newval = 3;
+
+      if (newval != aspect_ratio_mode)
       {
-        use_par = newval;
+        aspect_ratio_mode = newval;
         geometry_update = true;
       }
    }
@@ -303,14 +309,44 @@ void retro_get_system_info(struct retro_system_info *info)
     info->block_extract = false;
 }
 
+float get_aspect_ratio(unsigned width, unsigned height)
+{
+  if (aspect_ratio_mode == 3) // 4:3
+  {
+    return SNES_4_3;
+  }
+
+  float sample_frequency_ntsc = 135000000.0 / 11.0;
+  float sample_frequency_pal = 14750000.0;
+
+  float sample_freq = retro_get_region() == RETRO_REGION_NTSC ? sample_frequency_ntsc : sample_frequency_pal;
+  float dot_rate = SNES::cpu.frequency / 4.0;
+
+  if (aspect_ratio_mode == 1) // ntsc
+  {
+    sample_freq = sample_frequency_ntsc;
+    dot_rate = NTSC_MASTER_CLOCK / 4.0;
+  }
+  else if (aspect_ratio_mode == 2) // pal
+  {
+    sample_freq = sample_frequency_pal;
+    dot_rate = PAL_MASTER_CLOCK / 4.0;
+  }
+
+  float par = sample_freq / 2.0 / dot_rate;
+  return (float)width * par / (float)height;
+}
+
 void retro_get_system_av_info(struct retro_system_av_info *info)
 {
     memset(info,0,sizeof(retro_system_av_info));
-    info->geometry.base_width = SNES_WIDTH;
-    info->geometry.base_height = use_overscan ? SNES_HEIGHT_EXTENDED : SNES_HEIGHT;
+    unsigned width = SNES_WIDTH;
+    unsigned height = use_overscan ? SNES_HEIGHT_EXTENDED : SNES_HEIGHT;
+    info->geometry.base_width = width;
+    info->geometry.base_height = height;
     info->geometry.max_width = MAX_SNES_WIDTH;
     info->geometry.max_height = MAX_SNES_HEIGHT;
-    info->geometry.aspect_ratio = use_par ? SNES_8_7_PAR : SNES_4_3 ;
+    info->geometry.aspect_ratio = get_aspect_ratio(width, height);
     info->timing.sample_rate = 32040;
     info->timing.fps = retro_get_region() == RETRO_REGION_NTSC ? 21477272.0 / 357366.0 : 21281370.0 / 425568.0;
 }
