@@ -111,7 +111,7 @@ void retro_set_input_state(retro_input_state_t cb)
 }
 
 static retro_environment_t environ_cb;
-static bool use_overscan = false;
+static unsigned crop_overscan_mode = 0;
 static unsigned aspect_ratio_mode = 0;
 static bool rom_loaded = false;
 void retro_set_environment(retro_environment_t cb)
@@ -138,7 +138,7 @@ void retro_set_environment(retro_environment_t cb)
       { "snes9x_sndchan_6", "Enable sound channel 6; enabled|disabled" },
       { "snes9x_sndchan_7", "Enable sound channel 7; enabled|disabled" },
       { "snes9x_sndchan_8", "Enable sound channel 8; enabled|disabled" },
-      { "snes9x_overscan", "Crop Overscan; enabled|disabled" },
+      { "snes9x_overscan", "Crop overscan; auto|enabled|disabled" },
       { "snes9x_aspect", "Preferred aspect ratio; auto|ntsc|pal|4:3" },
       { NULL, NULL },
    };
@@ -247,12 +247,17 @@ static void update_variables(void)
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
    {
-      bool newval = (!strcmp(var.value, "disabled"));
-      if (newval != use_overscan)
-      {
-        use_overscan = newval;
-        geometry_update = true;
-      }
+     unsigned newval = 0;
+     if (strcmp(var.value, "enabled") == 0)
+       newval = 1;
+     else if (strcmp(var.value, "disabled") == 0)
+       newval = 2;
+     
+     if (newval != crop_overscan_mode)
+     {
+       crop_overscan_mode = newval;
+       geometry_update = true;
+     }
    }
 
    var.key = "snes9x_aspect";
@@ -341,7 +346,12 @@ void retro_get_system_av_info(struct retro_system_av_info *info)
 {
     memset(info,0,sizeof(retro_system_av_info));
     unsigned width = SNES_WIDTH;
-    unsigned height = use_overscan ? SNES_HEIGHT_EXTENDED : SNES_HEIGHT;
+    unsigned height = PPU.ScreenHeight;
+    if (crop_overscan_mode == 1) // enabled
+      height = SNES_HEIGHT;
+    else if (crop_overscan_mode == 2) // disabled
+      height = SNES_HEIGHT_EXTENDED;
+
     info->geometry.base_width = width;
     info->geometry.base_height = height;
     info->geometry.max_width = MAX_SNES_WIDTH;
@@ -1067,7 +1077,7 @@ bool retro_unserialize(const void* data, size_t size)
 
 bool8 S9xDeinitUpdate(int width, int height)
 {
-   if (!use_overscan)
+   if (crop_overscan_mode == 1) // enabled
    {
       if (height >= SNES_HEIGHT << 1)
       {
@@ -1078,7 +1088,7 @@ bool8 S9xDeinitUpdate(int width, int height)
          height = SNES_HEIGHT;
       }
    }
-   else
+   else if (crop_overscan_mode == 2) // disabled
    {
       if (height > SNES_HEIGHT_EXTENDED)
       {
