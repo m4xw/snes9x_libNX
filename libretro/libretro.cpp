@@ -170,13 +170,19 @@ void retro_set_environment(retro_environment_t cb)
 
 extern void S9xResetSuperFX(void);
 
+void update_geometry()
+{
+  struct retro_system_av_info av_info;
+  retro_get_system_av_info(&av_info);
+  environ_cb(RETRO_ENVIRONMENT_SET_GEOMETRY, &av_info);
+}
+
 static void update_variables(void)
 {
    bool reset_sfx = false;
    bool geometry_update = false;
    char key[256];
    struct retro_variable var;
-   struct retro_system_av_info av_info;
    var.key = "snes9x_overclock";
    var.value = NULL;
 
@@ -283,10 +289,7 @@ static void update_variables(void)
       S9xResetSuperFX();
 
    if (geometry_update)
-   {
-      retro_get_system_av_info(&av_info);
-      environ_cb(RETRO_ENVIRONMENT_SET_GEOMETRY, &av_info);
-   }
+     update_geometry();
 }
 
 static void S9xAudioCallback(void*)
@@ -635,8 +638,10 @@ void retro_unload_game(void)
 bool retro_load_game_special(unsigned game_type,
       const struct retro_game_info *info, size_t num_info) {
 
-   init_descriptors();
+  init_descriptors();
   memorydesc_c = 0;
+
+  update_variables();
 
   switch (game_type) {
      case RETRO_GAME_TYPE_BSX:
@@ -964,6 +969,7 @@ static void report_buttons()
 
 void retro_run()
 {
+   uint16 height = PPU.ScreenHeight;
    bool updated = false;
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, &updated) && updated)
       update_variables();
@@ -971,6 +977,8 @@ void retro_run()
    poll_cb();
    report_buttons();
    S9xMainLoop();
+   if (height != PPU.ScreenHeight)
+     update_geometry();
 }
 
 void retro_deinit()
@@ -1072,6 +1080,7 @@ bool retro_unserialize(const void* data, size_t size)
 {
    if (S9xUnfreezeGameMem((const uint8_t*)data,size) != SUCCESS)
       return false;
+   update_geometry();
    return true;
 }
 
