@@ -1080,7 +1080,7 @@ bool retro_unserialize(const void* data, size_t size)
 {
    if (S9xUnfreezeGameMem((const uint8_t*)data,size) != SUCCESS)
       return false;
-   update_geometry();
+   /* update_geometry();*/
    return true;
 }
 
