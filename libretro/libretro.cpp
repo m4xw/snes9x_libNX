@@ -969,16 +969,18 @@ static void report_buttons()
 
 void retro_run()
 {
-   uint16 height = PPU.ScreenHeight;
+   static uint16 height = PPU.ScreenHeight;
    bool updated = false;
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, &updated) && updated)
       update_variables();
-
+   if (height != PPU.ScreenHeight)
+   {
+      update_geometry();
+      height = PPU.ScreenHeight;
+   }
    poll_cb();
    report_buttons();
    S9xMainLoop();
-   if (height != PPU.ScreenHeight)
-     update_geometry();
 }
 
 void retro_deinit()
@@ -1080,7 +1082,6 @@ bool retro_unserialize(const void* data, size_t size)
 {
    if (S9xUnfreezeGameMem((const uint8_t*)data,size) != SUCCESS)
       return false;
-   /* update_geometry();*/
    return true;
 }
 
