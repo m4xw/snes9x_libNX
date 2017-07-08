@@ -12,6 +12,7 @@ SOURCES_CXX := $(CORE_DIR)/apu/apu.cpp \
 				 $(CORE_DIR)/cheats.cpp \
 				 $(CORE_DIR)/cheats2.cpp \
 				 $(CORE_DIR)/clip.cpp \
+				 $(CORE_DIR)/conffile.cpp \
 				 $(CORE_DIR)/controls.cpp \
 				 $(CORE_DIR)/cpu.cpp \
 				 $(CORE_DIR)/cpuexec.cpp \
