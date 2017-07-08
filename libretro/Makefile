@@ -266,13 +266,17 @@ else
    CODE_DEFINES = -fomit-frame-pointer
 endif
 
+CXXFLAGS	+= $(CODE_DEFINES) $(WARNINGS_DEFINES) $(fpic)
+CXXFLAGS	+= -DRIGHTSHIFT_IS_SAR -D__LIBRETRO__
+CFLAGS		= $(CXXFLAGS)
+
+ifeq (,$(findstring msvc,$(platform)))
+CXXFLAGS += -DHAVE_STRINGS_H
+CXXFLAGS += -fno-rtti -pedantic 
 ifneq ($(HAVE_EXCEPTIONS), 1)
    CXXFLAGS += -fno-exceptions
 endif
-
-CXXFLAGS	+= $(CODE_DEFINES) -fno-rtti -pedantic $(WARNINGS_DEFINES) $(fpic)
-CXXFLAGS	+= -DHAVE_STRINGS_H -DRIGHTSHIFT_IS_SAR -D__LIBRETRO__
-CFLAGS		= $(CXXFLAGS)
+endif
 
 OBJOUT   = -o
 LINKOUT  = -o 
