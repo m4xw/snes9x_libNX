@@ -49,6 +49,14 @@ ifneq (,$(findstring unix,$(platform)))
       LIBS :=
    endif
 
+   # ARM
+   ifneq (,$(findstring armv,$(platform)))
+      CXXFLAGS += -DARM
+   # Raspberry Pi
+   else ifneq (,$(findstring rpi,$(platform)))
+      CXXFLAGS += -DARM
+   endif
+
 # OS X
 else ifeq ($(platform), osx)
    TARGET := $(TARGET_NAME)_libretro.dylib
