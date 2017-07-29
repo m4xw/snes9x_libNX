@@ -630,88 +630,100 @@ bool8 S9xDoDMA (uint8 Channel)
 				else
 				if (d->TransferMode == 3 || d->TransferMode == 7)
 				{
-					do
+					switch (b)
 					{
-						Work = S9xGetByte((d->ABank << 16) + p);
-						if (b == 2 || b == 3)
+						default:
+						do
 						{
-							S9xSetPPU(Work, 0x2101 + d->BAddress);
-						}
-						else
-						{
+							Work = S9xGetByte((d->ABank << 16) + p);
 							S9xSetPPU(Work, 0x2100 + d->BAddress);
-						}
-						UPDATE_COUNTERS;
-						if (--count <= 0)
-						{
-							switch (b)
+							UPDATE_COUNTERS;
+							if (--count <= 0)
 							{
-								default:
-									b = 1;
-									break;
-
-								case 1:
-									b = 2;
-									break;
-
-								case 2:
-									b = 3;
-									break;
-
-								case 3:
-									b = 0;
-									break;
+								b = 1;
+								break;
 							}
-						}
-					} while (1);
+
+						case 1:
+							Work = S9xGetByte((d->ABank << 16) + p);
+							S9xSetPPU(Work, 0x2100 + d->BAddress);
+							UPDATE_COUNTERS;
+							if (--count <= 0)
+							{
+								b = 2;
+								break;
+							}
+
+						case 2:
+							Work = S9xGetByte((d->ABank << 16) + p);
+							S9xSetPPU(Work, 0x2101 + d->BAddress);
+							UPDATE_COUNTERS;
+							if (--count <= 0)
+							{
+								b = 3;
+								break;
+							}
+
+						case 3:
+							Work = S9xGetByte((d->ABank << 16) + p);
+							S9xSetPPU(Work, 0x2101 + d->BAddress);
+							UPDATE_COUNTERS;
+							if (--count <= 0)
+							{
+								b = 0;
+								break;
+							}
+						} while (1);
+					}
 				}
 				else
 				if (d->TransferMode == 4)
 				{
-					do
+					switch (b)
 					{
-						Work = S9xGetByte((d->ABank << 16) + p);
-						if (b == 1)
+						default:
+						do
 						{
-							S9xSetPPU(Work, 0x2101 + d->BAddress);
-						}
-						else
-						if (b == 2)
-						{
-							S9xSetPPU(Work, 0x2102 + d->BAddress);
-						}
-						else
-						if (b == 3)
-						{
-							S9xSetPPU(Work, 0x2103 + d->BAddress);
-						}
-						else
-						{
+							Work = S9xGetByte((d->ABank << 16) + p);
 							S9xSetPPU(Work, 0x2100 + d->BAddress);
-						}
-						UPDATE_COUNTERS;
-						if (--count <= 0)
-						{
-							switch (b)
+							UPDATE_COUNTERS;
+							if (--count <= 0)
 							{
-								default:
-									b = 1;
-									break;
-
-								case 1:
-									b = 2;
-									break;
-
-								case 2:
-									b = 3;
-									break;
-
-								case 3:
-									b = 0;
-									break;
+								b = 1;
+								break;
 							}
-						}
-					} while (1);
+
+						case 1:
+							Work = S9xGetByte((d->ABank << 16) + p);
+							S9xSetPPU(Work, 0x2101 + d->BAddress);
+							UPDATE_COUNTERS;
+							if (--count <= 0)
+							{
+								b = 2;
+								break;
+							}
+
+						case 2:
+							Work = S9xGetByte((d->ABank << 16) + p);
+							S9xSetPPU(Work, 0x2102 + d->BAddress);
+							UPDATE_COUNTERS;
+							if (--count <= 0)
+							{
+								b = 3;
+								break;
+							}
+
+						case 3:
+							Work = S9xGetByte((d->ABank << 16) + p);
+							S9xSetPPU(Work, 0x2103 + d->BAddress);
+							UPDATE_COUNTERS;
+							if (--count <= 0)
+							{
+								b = 0;
+								break;
+							}
+						} while (1);
+					}
 				}
 			#ifdef DEBUGGER
 				else
@@ -925,88 +937,100 @@ bool8 S9xDoDMA (uint8 Channel)
 				else
 				if (d->TransferMode == 3 || d->TransferMode == 7)
 				{
-					do
+					switch (b)
 					{
-						Work = *(base + p);
-						if (b == 2 || b == 3)
+						default:
+						do
 						{
-							S9xSetPPU(Work, 0x2101 + d->BAddress);
-						}
-						else
-						{
+							Work = *(base + p);
 							S9xSetPPU(Work, 0x2100 + d->BAddress);
-						}
-						UPDATE_COUNTERS;
-						if (--count <= 0)
-						{
-							switch (b)
+							UPDATE_COUNTERS;
+							if (--count <= 0)
 							{
-								default:
-									b = 1;
-									break;
-
-								case 1:
-									b = 2;
-									break;
-
-								case 2:
-									b = 3;
-									break;
-
-								case 3:
-									b = 0;
-									break;
+								b = 1;
+								break;
 							}
-						}
-					} while (1);
+
+						case 1:
+							Work = *(base + p);
+							S9xSetPPU(Work, 0x2100 + d->BAddress);
+							UPDATE_COUNTERS;
+							if (--count <= 0)
+							{
+								b = 2;
+								break;
+							}
+
+						case 2:
+							Work = *(base + p);
+							S9xSetPPU(Work, 0x2101 + d->BAddress);
+							UPDATE_COUNTERS;
+							if (--count <= 0)
+							{
+								b = 3;
+								break;
+							}
+
+						case 3:
+							Work = *(base + p);
+							S9xSetPPU(Work, 0x2101 + d->BAddress);
+							UPDATE_COUNTERS;
+							if (--count <= 0)
+							{
+								b = 0;
+								break;
+							}
+						} while (1);
+					}
 				}
 				else
 				if (d->TransferMode == 4)
 				{
-					do
+					switch (b)
 					{
-						Work = *(base + p);
-						if (b == 1)
+						default:
+						do
 						{
-							S9xSetPPU(Work, 0x2101 + d->BAddress);
-						}
-						else
-						if (b == 2)
-						{
-							S9xSetPPU(Work, 0x2102 + d->BAddress);
-						}
-						else
-						if (b == 3)
-						{
-							S9xSetPPU(Work, 0x2103 + d->BAddress);
-						}
-						else
-						{
+							Work = *(base + p);
 							S9xSetPPU(Work, 0x2100 + d->BAddress);
-						}
-						UPDATE_COUNTERS;
-						if (--count <= 0)
-						{
-							switch (b)
+							UPDATE_COUNTERS;
+							if (--count <= 0)
 							{
-								default:
-									b = 1;
-									break;
-
-								case 1:
-									b = 2;
-									break;
-
-								case 2:
-									b = 3;
-									break;
-
-								case 3:
-									b = 0;
-									break;
+								b = 1;
+								break;
 							}
-						}
-					} while (1);
+
+						case 1:
+							Work = *(base + p);
+							S9xSetPPU(Work, 0x2101 + d->BAddress);
+							UPDATE_COUNTERS;
+							if (--count <= 0)
+							{
+								b = 2;
+								break;
+							}
+
+						case 2:
+							Work = *(base + p);
+							S9xSetPPU(Work, 0x2102 + d->BAddress);
+							UPDATE_COUNTERS;
+							if (--count <= 0)
+							{
+								b = 3;
+								break;
+							}
+
+						case 3:
+							Work = *(base + p);
+							S9xSetPPU(Work, 0x2103 + d->BAddress);
+							UPDATE_COUNTERS;
+							if (--count <= 0)
+							{
+								b = 0;
+								break;
+							}
+						} while (1);
+					}
 				}
 			#ifdef DEBUGGER
 				else
