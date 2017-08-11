@@ -193,8 +193,10 @@
 #include <limits.h>
 #include <time.h>
 #include <string.h>
+#ifndef __LIBRETRO__
 #ifdef HAVE_STRINGS_H
 #include <strings.h>
+#endif
 #endif
 #include <sys/types.h>
 
