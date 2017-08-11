@@ -262,14 +262,13 @@ typedef uint64_t			uint64;
 
 #define S9xDisplayString	DisplayStringFromBottom
 
-#if defined(__WIN32__)
-
 #ifdef _MSC_VER
 #define snprintf _snprintf
 #define strcasecmp	stricmp
 #define strncasecmp	strnicmp
 #endif
 
+#if defined(__WIN32__)
 #else
 void _splitpath (const char *, char *, char *, char *, char *);
 void _makepath (char *, const char *, const char *, const char *, const char *);
