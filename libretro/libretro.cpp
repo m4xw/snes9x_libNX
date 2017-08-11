@@ -1121,7 +1121,7 @@ const char* S9xGetFilename(const char* in, s9x_getdirtype type)
    switch (type)
    {
       case ROMFILENAME_DIR:
-         snprintf(newpath, sizeof(newpath), "%s%c%s%s",
+         sprintf(newpath, "%s%c%s%s",
                g_rom_dir, SLASH, g_basename, in);
          return newpath;
       default:

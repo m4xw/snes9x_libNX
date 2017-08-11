@@ -217,7 +217,7 @@ bool AudioOpen()
 		audioFile.close();
 
 	char ext[_MAX_EXT];
-	snprintf(ext, _MAX_EXT, "-%d.pcm", MSU1.MSU1_CURRENT_TRACK);
+	sprintf(ext, "-%d.pcm", MSU1.MSU1_CURRENT_TRACK);
 
 	audioFile.clear();
 	audioFile.open(S9xGetFilename(ext, ROMFILENAME_DIR), std::ios::in | std::ios::binary);
