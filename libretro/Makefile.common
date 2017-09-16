@@ -1,4 +1,9 @@
+LIBRETRO_COMM_DIR = $(CORE_DIR)/libretro/libretro-common
 INCFLAGS   = -I$(CORE_DIR)/libretro -I$(CORE_DIR) -I$(CORE_DIR)/apu/ -I$(CORE_DIR)/apu/bapu
+
+ifneq (,$(findstring msvc2003,$(platform)))
+INCFLAGS += -I$(LIBRETRO_COMM_DIR)/include/compat/msvc
+endif
 
 SOURCES_C   :=
 SOURCES_CXX := $(CORE_DIR)/apu/apu.cpp \
