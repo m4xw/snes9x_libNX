@@ -30,9 +30,6 @@ else ifneq (,$(findstring rpi,$(platform)))
    override platform += unix
 endif
 
-CXX			?= g++
-CC			?= gcc
-
 TARGET_NAME	= snes9x
 
 LIBS     =
