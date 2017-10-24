@@ -130,6 +130,7 @@ void retro_set_environment(retro_environment_t cb)
       { "snes9x_layer_5", "Show sprite layer; enabled|disabled" },
       { "snes9x_gfx_clip", "Enable graphic clip windows; enabled|disabled" },
       { "snes9x_gfx_transp", "Enable transparency effects; enabled|disabled" },
+	  { "snes9x_gfx_hires", "Enable hires mode; enabled|disabled" },
       { "snes9x_sndchan_1", "Enable sound channel 1; enabled|disabled" },
       { "snes9x_sndchan_2", "Enable sound channel 2; enabled|disabled" },
       { "snes9x_sndchan_3", "Enable sound channel 3; enabled|disabled" },
@@ -226,6 +227,10 @@ static void update_variables(void)
    var.key="snes9x_gfx_transp";
    var.value=NULL;
    Settings.Transparency=!(environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && !strcmp("disabled", var.value));
+   
+   var.key="snes9x_gfx_hires";
+   var.value=NULL;
+   Settings.SupportHiRes=!(environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && !strcmp("disabled", var.value));
 
    var.key = "snes9x_overscan";
 
