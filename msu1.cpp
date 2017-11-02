@@ -198,6 +198,9 @@
 #include <fstream>
 #include <sys/stat.h>
 
+#include "libretro/libretro.h"
+extern retro_log_printf_t log_cb;
+
 STREAM dataStream = NULL;
 STREAM audioStream = NULL;
 uint32 audioLoopPos;
@@ -227,8 +230,7 @@ static int unzFindExtension(unzFile &file, const char *ext, bool restart = TRUE,
 
         if (len >= l + e && strcasecmp(name + len - l, ext) == 0 && unzOpenCurrentFile(file) == UNZ_OK)
         {
-            if (print)
-                printf("Using msu file %s", name);
+                if (log_cb) log_cb(RETRO_LOG_INFO, "Using msu file %s", name);
 
             return (port);
         }
@@ -249,7 +251,7 @@ STREAM S9xMSU1OpenFile(const char *msu_ext, bool skip_unpacked)
 	{
 		file = OPEN_STREAM(filename, "rb");
 		if (file)
-			printf("Using msu file %s.\n", filename);
+			if (log_cb) log_cb(RETRO_LOG_INFO, "Using msu file %s.\n", filename);
 	}
 
 #ifdef UNZIP_SUPPORT
@@ -270,7 +272,7 @@ STREAM S9xMSU1OpenFile(const char *msu_ext, bool skip_unpacked)
             int	port = unzFindExtension(unzFile, msu_ext, true, true, true);
             if (port == UNZ_OK)
             {
-                printf(" in %s.\n", zip_filename);
+                if (log_cb) log_cb(RETRO_LOG_INFO, " in %s.\n", zip_filename);
                 file = new unzStream(unzFile);
             }
             else
@@ -280,7 +282,7 @@ STREAM S9xMSU1OpenFile(const char *msu_ext, bool skip_unpacked)
 #endif
 
     if(!file)
-        printf("Unable to find msu file %s.\n", filename);
+        if (log_cb) log_cb(RETRO_LOG_INFO, "Unable to find msu file %s.\n", filename);
 
     return file;
 }
