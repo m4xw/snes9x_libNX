@@ -202,7 +202,7 @@ static void update_variables(void)
    {
       key[strlen("snes9x_sndchan_")]='1'+i;
       var.value=NULL;
-      if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && !strcmp("disabled", var.value)) 
+      if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && !strcmp("disabled", var.value))
          disabled_channels|=1<<i;
    }
    S9xSetSoundControl(disabled_channels^0xFF);
@@ -214,7 +214,7 @@ static void update_variables(void)
    {
       key[strlen("snes9x_layer_")]='1'+i;
       var.value=NULL;
-      if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && !strcmp("disabled", var.value)) 
+      if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && !strcmp("disabled", var.value))
          disabled_layers|=1<<i;
    }
    Settings.BG_Forced=disabled_layers;
@@ -227,7 +227,7 @@ static void update_variables(void)
    var.key="snes9x_gfx_transp";
    var.value=NULL;
    Settings.Transparency=!(environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && !strcmp("disabled", var.value));
-   
+
    var.key="snes9x_gfx_hires";
    var.value=NULL;
    Settings.SupportHiRes=!(environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && !strcmp("disabled", var.value));
@@ -241,7 +241,7 @@ static void update_variables(void)
        newval = 1;
      else if (strcmp(var.value, "disabled") == 0)
        newval = 2;
-     
+
      if (newval != crop_overscan_mode)
      {
        crop_overscan_mode = newval;
@@ -732,14 +732,14 @@ void retro_init(void)
    }
 
    //very slow devices will still pop
-   
+
    //this needs to be applied to all snes9x cores
-   
+
    //increasing the buffer size does not cause extra lag(tested with 1000ms buffer)
    //bool8 S9xInitSound (int buffer_ms, int lag_ms)
-   
+
    S9xInitSound(1000, 0);//just give it a 1 second buffer
-   
+
    S9xSetSoundMute(FALSE);
    S9xSetSamplesAvailableCallback(S9xAudioCallback, NULL);
 
@@ -1158,12 +1158,35 @@ const char* S9xBasename(const char* in) { return in; }
 bool8 S9xInitUpdate() { return TRUE; }
 void S9xExtraUsage() {}
 bool8 S9xOpenSoundDevice() { return TRUE; }
-void S9xMessage(int, int, const char*) {}
 bool S9xPollAxis(unsigned int, short*) { return FALSE; }
 void S9xSetPalette() {}
 void S9xParseArg(char**, int&, int) {}
 void S9xExit() {}
 bool S9xPollPointer(unsigned int, short*, short*) { return false; }
+
+void S9xMessage(int type, int, const char* s)
+{
+	if (!log_cb) return;
+
+	switch (type)
+	{
+		case S9X_DEBUG:
+			log_cb(RETRO_LOG_DEBUG, "%s\n", s);
+			break;
+		case S9X_WARNING:
+			log_cb(RETRO_LOG_WARN, "%s\n", s);
+			break;
+		case S9X_INFO:
+			log_cb(RETRO_LOG_INFO, "%s\n", s);
+			break;
+		case S9X_ERROR:
+			log_cb(RETRO_LOG_ERROR, "%s\n", s);
+			break;
+		default:
+			log_cb(RETRO_LOG_DEBUG, "%s\n", s);
+			break;
+	}
+}
 
 bool8 S9xOpenSnapshotFile(const char* filepath, bool8 read_only, STREAM *file)
 {
