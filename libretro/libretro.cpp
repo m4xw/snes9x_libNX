@@ -44,7 +44,7 @@
 char g_rom_dir[1024];
 char g_basename[1024];
 
-static retro_log_printf_t log_cb = NULL;
+retro_log_printf_t log_cb = NULL;
 static retro_video_refresh_t video_cb = NULL;
 static retro_audio_sample_t audio_cb = NULL;
 static retro_audio_sample_batch_t audio_batch_cb = NULL;
