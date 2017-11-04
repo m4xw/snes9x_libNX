@@ -470,7 +470,7 @@ enum
 void S9xSetPause(uint32);
 void S9xClearPause(uint32);
 void S9xExit(void);
-void S9xMessage(int, int, const char *);
+void S9xMessage(int type, int, const char *s);
 
 extern struct SSettings			Settings;
 extern struct SCPUState			CPU;

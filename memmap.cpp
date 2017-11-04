@@ -211,6 +211,8 @@
 #include "display.h"
 
 #include "libretro/libretro.h"
+extern retro_log_printf_t log_cb;
+
 void S9xAppendMapping(struct retro_memory_descriptor *desc);
 
 #ifndef SET_UI_COLOR
@@ -2312,7 +2314,7 @@ void CMemory::ParseSNESHeader (uint8 *RomHeader)
 	{
 		if (!(((RomHeader[0x29] & 0x20) && CalculatedSize <  0x100000) ||
 			 (!(RomHeader[0x29] & 0x20) && CalculatedSize == 0x100000)))
-			printf("BS: Size mismatch\n");
+			if (log_cb) log_cb(RETRO_LOG_INFO, "BS: Size mismatch\n");
 
 		// FIXME
 		int	p = 0;
@@ -3085,7 +3087,7 @@ void CMemory::Map_Initialize (void)
 
 void CMemory::Map_LoROMMap (void)
 {
-	printf("Map_LoROMMap\n");
+	if (log_cb) log_cb(RETRO_LOG_INFO, "Map_LoROMMap\n");
 	map_System();
 
 	map_lorom(0x00, 0x3f, 0x8000, 0xffff, CalculatedSize);
@@ -3113,7 +3115,7 @@ void CMemory::Map_LoROMMap (void)
 
 void CMemory::Map_NoMAD1LoROMMap (void)
 {
-	printf("Map_NoMAD1LoROMMap\n");
+	if (log_cb) log_cb(RETRO_LOG_INFO, "Map_NoMAD1LoROMMap\n");
 	map_System();
 
 	map_lorom(0x00, 0x3f, 0x8000, 0xffff, CalculatedSize);
@@ -3132,7 +3134,7 @@ void CMemory::Map_NoMAD1LoROMMap (void)
 void CMemory::Map_JumboLoROMMap (void)
 {
 	// XXX: Which game uses this?
-	printf("Map_JumboLoROMMap\n");
+	if (log_cb) log_cb(RETRO_LOG_INFO, "Map_JumboLoROMMap\n");
 	map_System();
 
 	map_lorom_offset(0x00, 0x3f, 0x8000, 0xffff, CalculatedSize - 0x400000, 0x400000);
@@ -3149,7 +3151,7 @@ void CMemory::Map_JumboLoROMMap (void)
 void CMemory::Map_ROM24MBSLoROMMap (void)
 {
 	// PCB: BSC-1A5M-01, BSC-1A7M-10
-	printf("Map_ROM24MBSLoROMMap\n");
+	if (log_cb) log_cb(RETRO_LOG_INFO, "Map_ROM24MBSLoROMMap\n");
 	map_System();
 
 	map_lorom_offset(0x00, 0x1f, 0x8000, 0xffff, 0x100000, 0);
@@ -3165,7 +3167,7 @@ void CMemory::Map_ROM24MBSLoROMMap (void)
 
 void CMemory::Map_SRAM512KLoROMMap (void)
 {
-	printf("Map_SRAM512KLoROMMap\n");
+	if (log_cb) log_cb(RETRO_LOG_INFO, "Map_SRAM512KLoROMMap\n");
 	map_System();
 
 	map_lorom(0x00, 0x3f, 0x8000, 0xffff, CalculatedSize);
@@ -3185,7 +3187,7 @@ void CMemory::Map_SRAM512KLoROMMap (void)
 
 void CMemory::Map_SufamiTurboLoROMMap (void)
 {
-	printf("Map_SufamiTurboLoROMMap\n");
+	if (log_cb) log_cb(RETRO_LOG_INFO, "Map_SufamiTurboLoROMMap\n");
 	map_System();
 
 	map_lorom_offset(0x00, 0x1f, 0x8000, 0xffff, 0x40000, 0);
@@ -3215,7 +3217,7 @@ void CMemory::Map_SufamiTurboLoROMMap (void)
 void CMemory::Map_SufamiTurboPseudoLoROMMap (void)
 {
 	// for combined images
-	printf("Map_SufamiTurboPseudoLoROMMap\n");
+	if (log_cb) log_cb(RETRO_LOG_INFO, "Map_SufamiTurboPseudoLoROMMap\n");
 	map_System();
 
 	map_lorom_offset(0x00, 0x1f, 0x8000, 0xffff, 0x40000, 0);
@@ -3238,7 +3240,7 @@ void CMemory::Map_SufamiTurboPseudoLoROMMap (void)
 
 void CMemory::Map_SuperFXLoROMMap (void)
 {
-	printf("Map_SuperFXLoROMMap\n");
+	if (log_cb) log_cb(RETRO_LOG_INFO, "Map_SuperFXLoROMMap\n");
 	map_System();
 
 	// Replicate the first 2Mb of the ROM at ROM + 2MB such that each 32K
@@ -3267,7 +3269,7 @@ void CMemory::Map_SuperFXLoROMMap (void)
 
 void CMemory::Map_SetaDSPLoROMMap (void)
 {
-	printf("Map_SetaDSPLoROMMap\n");
+	if (log_cb) log_cb(RETRO_LOG_INFO, "Map_SetaDSPLoROMMap\n");
 	map_System();
 
 	map_lorom(0x00, 0x3f, 0x8000, 0xffff, CalculatedSize);
@@ -3285,7 +3287,7 @@ void CMemory::Map_SetaDSPLoROMMap (void)
 
 void CMemory::Map_SDD1LoROMMap (void)
 {
-	printf("Map_SDD1LoROMMap\n");
+	if (log_cb) log_cb(RETRO_LOG_INFO, "Map_SDD1LoROMMap\n");
 	map_System();
 
 	map_lorom(0x00, 0x3f, 0x8000, 0xffff, CalculatedSize);
@@ -3303,7 +3305,7 @@ void CMemory::Map_SDD1LoROMMap (void)
 
 void CMemory::Map_SA1LoROMMap (void)
 {
-	printf("Map_SA1LoROMMap\n");
+	if (log_cb) log_cb(RETRO_LOG_INFO, "Map_SA1LoROMMap\n");
 	map_System();
 
 	map_lorom(0x00, 0x3f, 0x8000, 0xffff, CalculatedSize);
@@ -3345,7 +3347,7 @@ void CMemory::Map_SA1LoROMMap (void)
 
 void CMemory::Map_GNEXTSA1LoROMMap (void)
 {
-	printf("Map_GNEXTSA1LoROMMap\n");
+	if (log_cb) log_cb(RETRO_LOG_INFO, "Map_GNEXTSA1LoROMMap\n");
 	map_System();
 
 	map_lorom_offset(0x00, 0x3f, 0x8000, 0xffff, Multi.cartSizeA, Multi.cartOffsetA);
@@ -3390,7 +3392,7 @@ void CMemory::Map_GNEXTSA1LoROMMap (void)
 
 void CMemory::Map_HiROMMap (void)
 {
-	printf("Map_HiROMMap\n");
+	if (log_cb) log_cb(RETRO_LOG_INFO, "Map_HiROMMap\n");
 	map_System();
 
 	map_hirom(0x00, 0x3f, 0x8000, 0xffff, CalculatedSize);
@@ -3409,7 +3411,7 @@ void CMemory::Map_HiROMMap (void)
 
 void CMemory::Map_ExtendedHiROMMap (void)
 {
-	printf("Map_ExtendedHiROMMap\n");
+	if (log_cb) log_cb(RETRO_LOG_INFO, "Map_ExtendedHiROMMap\n");
 	map_System();
 
 	map_hirom_offset(0x00, 0x3f, 0x8000, 0xffff, CalculatedSize - 0x400000, 0x400000);
@@ -3425,7 +3427,7 @@ void CMemory::Map_ExtendedHiROMMap (void)
 
 void CMemory::Map_SameGameHiROMMap (void)
 {
-	printf("Map_SameGameHiROMMap\n");
+	if (log_cb) log_cb(RETRO_LOG_INFO, "Map_SameGameHiROMMap\n");
 	map_System();
 
 	map_hirom_offset(0x00, 0x1f, 0x8000, 0xffff, Multi.cartSizeA, Multi.cartOffsetA);
@@ -3445,7 +3447,7 @@ void CMemory::Map_SameGameHiROMMap (void)
 
 void CMemory::Map_SPC7110HiROMMap (void)
 {
-	printf("Map_SPC7110HiROMMap\n");
+	if (log_cb) log_cb(RETRO_LOG_INFO, "Map_SPC7110HiROMMap\n");
 	map_System();
 
 	map_index(0x00, 0x00, 0x6000, 0x7fff, MAP_HIROM_SRAM, MAP_TYPE_RAM);
@@ -3808,7 +3810,7 @@ void CMemory::ApplyROMFixes (void)
 		if (match_na("BATTLE GRANDPRIX")) // Battle Grandprix
 		{
 			Timings.DMACPUSync = 20;
-			printf("DMA sync: %d\n", Timings.DMACPUSync);
+			if (log_cb) log_cb(RETRO_LOG_INFO, "DMA sync: %d\n", Timings.DMACPUSync);
 		}
 	}
 
@@ -3821,7 +3823,7 @@ void CMemory::ApplyROMFixes (void)
 		if (match_na("Aero the AcroBat 2"))
 		{
 			Timings.IRQPendCount = 2;
-			printf("IRQ count hack: %d\n", Timings.IRQPendCount);
+			if (log_cb) log_cb(RETRO_LOG_INFO, "IRQ count hack: %d\n", Timings.IRQPendCount);
 		}
 	}
 
@@ -3831,7 +3833,7 @@ void CMemory::ApplyROMFixes (void)
 		if (match_na("X-MEN")) // Spider-Man and the X-Men
 		{
 			Settings.BlockInvalidVRAMAccess = FALSE;
-			printf("Invalid VRAM access hack\n");
+			if (log_cb) log_cb(RETRO_LOG_INFO, "Invalid VRAM access hack\n");
 		}
 	}
 
@@ -3869,7 +3871,7 @@ void CMemory::ApplyROMFixes (void)
 		if (match_nn("UNIRACERS")) // Uniracers
 		{
 			SNESGameFixes.Uniracers = TRUE;
-			printf("Applied Uniracers hack.\n");
+			if (log_cb) log_cb(RETRO_LOG_INFO, "Applied Uniracers hack.\n");
 		}
 	}
 }
