@@ -575,6 +575,8 @@ static void init_descriptors(void)
    environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, desc);
 }
 
+static bool ChronoTriggerFrameHack;
+
 bool retro_load_game(const struct retro_game_info *game)
 {
    init_descriptors();
@@ -608,6 +610,18 @@ bool retro_load_game(const struct retro_game_info *game)
 
    if (!rom_loaded && log_cb)
       log_cb(RETRO_LOG_ERROR, "[libretro]: Rom loading failed...\n");
+
+   /* Check if Chrono Trigger is loaded, if so, we need to set a variable to
+    * true to get rid of an annoying mid-frame resolution switch to 256x239
+    * which can cause an undesirable flicker/breakup of the screen for a
+    * split second - this happens whenever the game switches from normal
+    * mode to battle mode and vice versa. */
+   ChronoTriggerFrameHack = false;
+   if (Memory.match_nc("CHRONO TRIGGER") ||	/* Chrono Trigger */
+      Memory.match_id("ACT") ||
+      Memory.match_id("AC9J")		/* Chrono Trigger (Sample) */
+      )
+         ChronoTriggerFrameHack = true;
 
    struct retro_memory_map map={ memorydesc+MAX_MAPS-memorydesc_c, memorydesc_c };
    if (rom_loaded) environ_cb(RETRO_ENVIRONMENT_SET_MEMORY_MAPS, &map);
@@ -1070,6 +1084,10 @@ bool retro_unserialize(const void* data, size_t size)
 
 bool8 S9xDeinitUpdate(int width, int height)
 {
+   // Apply Chrono Trigger Framehack
+   if (ChronoTriggerFrameHack && (height > SNES_HEIGHT))
+      height = SNES_HEIGHT;
+
    if (crop_overscan_mode == 1) // enabled
    {
       if (height >= SNES_HEIGHT << 1)
