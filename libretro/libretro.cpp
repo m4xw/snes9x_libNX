@@ -375,7 +375,7 @@ void retro_set_controller_port_device(unsigned port, unsigned device)
             snes_devices[port] = RETRO_DEVICE_JOYPAD_MULTITAP;
             break;
          case RETRO_DEVICE_MOUSE:
-            S9xSetController(port, CTL_MOUSE, 0, 0, 0, 0);
+            S9xSetController(port, CTL_MOUSE, port, 0, 0, 0);
             snes_devices[port] = RETRO_DEVICE_MOUSE;
             break;
          case RETRO_DEVICE_LIGHTGUN_SUPER_SCOPE:
