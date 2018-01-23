@@ -52,7 +52,12 @@ endif
 ifneq (,$(findstring unix,$(platform)))
    TARGET := $(TARGET_NAME)_libretro.so
    fpic := -fPIC
+   ifneq ($(findstring SunOS,$(shell uname -a)),)
+   CC = gcc
+   SHARED := -shared -z defs
+   else
    SHARED := -shared -Wl,--version-script=link.T
+   endif
    ifneq ($(findstring Haiku,$(shell uname -a)),)
       LIBS :=
    endif
