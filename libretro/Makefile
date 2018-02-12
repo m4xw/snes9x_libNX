@@ -427,37 +427,34 @@ endif
 CORE_DIR := ..
 
 ifeq ($(DEBUG), 1)
-ifneq (,$(findstring msvc,$(platform)))
-	ifeq ($(STATIC_LINKING),1)
-	CFLAGS += -MTd
-	CXXFLAGS += -MTd
-else
-	CFLAGS += -MDd
-	CXXFLAGS += -MDd
-endif
+   ifneq (,$(findstring msvc,$(platform)))
+      CFLAGS += -Od -Zi -DDEBUG -D_DEBUG
+      CXXFLAGS += -Od -Zi -DDEBUG -D_DEBUG
 
-CFLAGS += -Od -Zi -DDEBUG -D_DEBUG
-CXXFLAGS += -Od -Zi -DDEBUG -D_DEBUG
-	else
-	CFLAGS += -O0 -g -DDEBUG
-	CXXFLAGS += -O0 -g -DDEBUG
-endif
+      ifeq ($(STATIC_LINKING),1)
+         CFLAGS += -MTd
+         CXXFLAGS += -MTd
+      else
+         CFLAGS += -MDd
+         CXXFLAGS += -MDd
+      endif
+   else
+      CFLAGS += -O0 -g -DDEBUG
+      CXXFLAGS += -O0 -g -DDEBUG
+   endif
 else
-ifneq (,$(findstring msvc,$(platform)))
-ifeq ($(STATIC_LINKING),1)
-	CFLAGS += -MT
-	CXXFLAGS += -MT
-else
-	CFLAGS += -MD
-	CXXFLAGS += -MD
-endif
+   CFLAGS += -O2 -DNDEBUG
+   CXXFLAGS += -O2 -DNDEBUG
 
-CFLAGS += -O2 -DNDEBUG
-CXXFLAGS += -O2 -DNDEBUG
-else
-	CFLAGS += -O2 -DNDEBUG
-	CXXFLAGS += -O2 -DNDEBUG
-endif
+   ifneq (,$(findstring msvc,$(platform)))
+      ifeq ($(STATIC_LINKING),1)
+         CFLAGS += -MT
+         CXXFLAGS += -MT
+      else
+         CFLAGS += -MD
+         CXXFLAGS += -MD
+      endif
+   endif
 endif
 
 include Makefile.common
