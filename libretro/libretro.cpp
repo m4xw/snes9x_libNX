@@ -45,6 +45,7 @@ char g_rom_dir[1024];
 char g_basename[1024];
 bool overclock_cycles = false;
 bool reduce_sprite_flicker = false;
+int one_c, slow_one_c, two_c;
 
 retro_log_printf_t log_cb = NULL;
 static retro_video_refresh_t video_cb = NULL;
@@ -125,7 +126,7 @@ void retro_set_environment(retro_environment_t cb)
       // Changing "Show layer 1" is fine, but don't change "layer_1"/etc or the possible values ("Yes|No").
       // Adding more variables and rearranging them is safe.
       { "snes9x_overclock", "SuperFX Frequency; 10MHz|20MHz|40MHz|60MHz|80MHz|100MHz" },
-      { "snes9x_overclock_cycles", "Reduce Slowdown (Hack, Unsafe); disabled|enabled" },
+      { "snes9x_overclock_cycles", "Reduce Slowdown (Hack, Unsafe); disabled|compatible|max" },
       { "snes9x_reduce_sprite_flicker", "Reduce Flickering (Hack, Unsafe); disabled|enabled" },
       { "snes9x_layer_1", "Show layer 1; enabled|disabled" },
       { "snes9x_layer_2", "Show layer 2; enabled|disabled" },
@@ -203,8 +204,20 @@ static void update_variables(void)
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
       {
-        if (strcmp(var.value, "enabled") == 0)
-          overclock_cycles = true;
+        if (strcmp(var.value, "compatible") == 0)
+        {
+           overclock_cycles = true;
+           one_c = 4;
+           slow_one_c = 5;
+           two_c = 6;
+        }
+        else if (strcmp(var.value, "max") == 0)
+        {
+           overclock_cycles = true;
+           one_c = 3;
+           slow_one_c = 3;
+           two_c = 3;
+        }
         else
           overclock_cycles = false;
       }
