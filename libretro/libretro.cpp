@@ -315,13 +315,25 @@ static void update_variables(void)
 
 static void S9xAudioCallback(void*)
 {
-   // Just pick a big buffer. We won't use it all.
-   static int16_t audio_buf[0x20000];
+   const int BUFFER_SIZE = 256;
+   // This is called every time 128 to 132 samples are generated, which happens about 8 times per frame.  A buffer size of 256 samples is enough here.
+   static int16_t audio_buf[BUFFER_SIZE];
 
    S9xFinalizeSamples();
    size_t avail = S9xGetSampleCount();
-   S9xMixSamples((uint8*)audio_buf, avail);
-   audio_batch_cb(audio_buf,avail >> 1);
+   while (avail >= BUFFER_SIZE)
+   {
+	   //this loop will never be entered, but handle oversized sample counts just in case
+	   S9xMixSamples((uint8*)audio_buf, BUFFER_SIZE);
+	   audio_batch_cb(audio_buf, BUFFER_SIZE >> 1);
+
+	   avail -= BUFFER_SIZE;
+   }
+   if (avail > 0)
+   {
+	   S9xMixSamples((uint8*)audio_buf, avail);
+	   audio_batch_cb(audio_buf, avail >> 1);
+   }
 }
 
 void retro_get_system_info(struct retro_system_info *info)
@@ -790,7 +802,7 @@ void retro_init(void)
    //increasing the buffer size does not cause extra lag(tested with 1000ms buffer)
    //bool8 S9xInitSound (int buffer_ms, int lag_ms)
 
-   S9xInitSound(1000, 0);//just give it a 1 second buffer
+   S9xInitSound(32, 0); //give it a 1.9 frame long buffer, or 1026 samples.  The audio buffer is flushed every 128-132 samples anyway, so it won't get anywhere near there.
 
    S9xSetSoundMute(FALSE);
    S9xSetSamplesAvailableCallback(S9xAudioCallback, NULL);
