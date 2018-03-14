@@ -1028,6 +1028,7 @@ void retro_run()
    poll_cb();
    report_buttons();
    S9xMainLoop();
+   S9xAudioCallback(NULL);
 }
 
 void retro_deinit()
