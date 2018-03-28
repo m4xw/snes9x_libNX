@@ -1025,6 +1025,16 @@ void retro_run()
       update_geometry();
       height = PPU.ScreenHeight;
    }
+
+   int result = -1;
+   bool okay = environ_cb(RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE, &result);
+   if (!okay) result |= 3;
+   bool audioEnabled = 0 != (result & 2);
+   bool videoEnabled = 0 != (result & 1);
+
+   IPPU.RenderThisFrame = videoEnabled;
+   S9xSetSoundMute(!audioEnabled);
+
    poll_cb();
    report_buttons();
    S9xMainLoop();
