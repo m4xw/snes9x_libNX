@@ -1025,6 +1025,25 @@ void retro_run()
       update_geometry();
       height = PPU.ScreenHeight;
    }
+
+   int result = -1;
+   bool okay = environ_cb(RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE, &result);
+   if (okay)
+   {
+      bool audioEnabled = 0 != (result & 2);
+      bool videoEnabled = 0 != (result & 1);
+      bool hardDisableAudio = 0 != (result & 8);
+      IPPU.RenderThisFrame = videoEnabled;
+      S9xSetSoundMute(!audioEnabled || hardDisableAudio);
+      Settings.HardDisableAudio = hardDisableAudio;
+   }
+   else
+   {
+      IPPU.RenderThisFrame = true;
+      S9xSetSoundMute(false);
+      Settings.HardDisableAudio = false;
+   }
+
    poll_cb();
    report_buttons();
    S9xMainLoop();
@@ -1120,7 +1139,14 @@ size_t retro_serialize_size()
 
 bool retro_serialize(void *data, size_t size)
 {
-   if (S9xFreezeGameMem((uint8_t*)data,size) == FALSE)
+	int result = -1;
+	bool okay = false;
+	okay = environ_cb(RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE, &result);
+	if (okay)
+	{
+		Settings.FastSavestates = 0 != (result & 4);
+	}
+	if (S9xFreezeGameMem((uint8_t*)data,size) == FALSE)
       return false;
 
    return true;
@@ -1128,8 +1154,16 @@ bool retro_serialize(void *data, size_t size)
 
 bool retro_unserialize(const void* data, size_t size)
 {
+   int result = -1;
+   bool okay = false;
+   okay = environ_cb(RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE, &result);
+   if (okay)
+   {
+	   Settings.FastSavestates = 0 != (result & 4);
+   }
    if (S9xUnfreezeGameMem((const uint8_t*)data,size) != SUCCESS)
       return false;
+
    return true;
 }
 
