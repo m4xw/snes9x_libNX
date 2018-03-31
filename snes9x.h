@@ -450,6 +450,9 @@ struct SSettings
 	bool8	UpAndDown;
 
 	bool8	OpenGLEnable;
+
+	bool8	FastSavestates;
+	bool8	HardDisableAudio;
 };
 
 struct SSNESGameFixes
