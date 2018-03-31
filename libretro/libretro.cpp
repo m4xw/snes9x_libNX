@@ -1030,18 +1030,18 @@ void retro_run()
    bool okay = environ_cb(RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE, &result);
    if (okay)
    {
-	   bool audioEnabled = 0 != (result & 2);
-	   bool videoEnabled = 0 != (result & 1);
-	   bool hardDisableAudio = 0 != (result & 8);
-	   IPPU.RenderThisFrame = videoEnabled;
-	   S9xSetSoundMute(!audioEnabled || hardDisableAudio);
-	   Settings.HardDisableAudio = hardDisableAudio;
+      bool audioEnabled = 0 != (result & 2);
+      bool videoEnabled = 0 != (result & 1);
+      bool hardDisableAudio = 0 != (result & 8);
+      IPPU.RenderThisFrame = videoEnabled;
+      S9xSetSoundMute(!audioEnabled || hardDisableAudio);
+      Settings.HardDisableAudio = hardDisableAudio;
    }
    else
    {
-	   IPPU.RenderThisFrame = true;;
-	   S9xSetSoundMute(false);
-	   Settings.HardDisableAudio = false;
+      IPPU.RenderThisFrame = true;
+      S9xSetSoundMute(false);
+      Settings.HardDisableAudio = false;
    }
 
    poll_cb();
