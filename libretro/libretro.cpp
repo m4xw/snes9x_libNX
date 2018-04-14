@@ -125,7 +125,7 @@ void retro_set_environment(retro_environment_t cb)
       // These variable names and possible values constitute an ABI with ZMZ (ZSNES Libretro player).
       // Changing "Show layer 1" is fine, but don't change "layer_1"/etc or the possible values ("Yes|No").
       // Adding more variables and rearranging them is safe.
-      { "snes9x_up_down_allowed", "Up  / Down Allowed; disabled|enabled" },
+      { "snes9x_up_down_allowed", "Up / Down Allowed; disabled|enabled" },
       { "snes9x_overclock", "SuperFX Frequency; 10MHz|20MHz|40MHz|60MHz|80MHz|100MHz" },
       { "snes9x_overclock_cycles", "Reduce Slowdown (Hack, Unsafe); disabled|compatible|max" },
       { "snes9x_reduce_sprite_flicker", "Reduce Flickering (Hack, Unsafe); disabled|enabled" },
