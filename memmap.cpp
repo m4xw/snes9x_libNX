@@ -199,6 +199,11 @@
 
 #include <ctype.h>
 #include <sys/stat.h>
+#ifdef _WIN32
+#include <direct.h>
+#else
+#include <unistd.h>
+#endif
 
 #include "snes9x.h"
 #include "memmap.h"
