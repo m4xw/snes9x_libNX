@@ -301,7 +301,7 @@ struct SCPUState
 	int32	PrevCycles;
 	int32	V_Counter;
 	uint8	*PCBase;
-	bool8	NMILine;
+	bool8	NMIPending;
 	bool8	IRQLine;
 	bool8	IRQTransition;
 	bool8	IRQLastState;
