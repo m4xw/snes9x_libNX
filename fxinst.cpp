@@ -4148,7 +4148,6 @@ static void fx_sm_r15 (void)
 uint32 fx_run (uint32 nInstructions)
 {
 	GSU.vCounter = nInstructions;
-	READR14;
 	while (TF(G) && (GSU.vCounter-- > 0))
 		FX_STEP;
 #if 0
