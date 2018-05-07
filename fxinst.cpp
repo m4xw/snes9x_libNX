@@ -965,8 +965,7 @@ static void fx_plot_4bit (void)
 		return;
 #endif
 
-
-	if (!(GSU.vPlotOptionReg & 0x01) && !(c & 0xf))
+	if (!(GSU.vPlotOptionReg & 0x01) && !(COLR & 0xf))
 		return;
 
 	if (GSU.vPlotOptionReg & 0x02)
