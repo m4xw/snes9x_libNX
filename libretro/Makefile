@@ -183,7 +183,7 @@ else ifeq ($(platform), xenon)
    STATIC_LINKING = 1
 
 # Nintendo Game Cube / Wii / WiiU
-else ifneq (,$(filter $(platform), ngc wii wiiu))
+else ifneq (,$(filter $(platform), ngc wii wiiu switch))
    TARGET := $(TARGET_NAME)_libretro_$(platform).a
    CC = $(DEVKITPPC)/bin/powerpc-eabi-gcc$(EXE_EXT)
    CXX = $(DEVKITPPC)/bin/powerpc-eabi-g++$(EXE_EXT)
@@ -203,7 +203,16 @@ else ifneq (,$(filter $(platform), ngc wii wiiu))
    # Nintendo Game Cube
    else ifneq (,$(findstring ngc,$(platform)))
       CXXFLAGS += -DGEKKO -mrvl
-   endif
+
+    # Nintendo Switch (libtransistor)
+    else ifeq ($(platform), switch)
+        EXT=a
+            TARGET := $(TARGET_NAME)_libretro_$(platform).$(EXT)
+            CXXFLAGS := -Wno-register
+            include $(LIBTRANSISTOR_HOME)/libtransistor.mk
+            STATIC_LINKING=1
+            STATIC_LINKING_LINK=1
+    endif
 
 # Emscripten
 else ifeq ($(platform), emscripten)
