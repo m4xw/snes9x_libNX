@@ -311,7 +311,7 @@ void S9xUpdateIRQPositions (void)
 
 	PPU.VTimerPosition = PPU.IRQVBeamPos;
 
-	if ((PPU.HTimerPosition >= Timings.H_Max) && (PPU.IRQHBeamPos < 340))
+	if ((PPU.HTimerPosition >= Timings.H_Max) && (PPU.IRQHBeamPos < 340) && PPU.HTimerEnabled)
 	{
 		PPU.HTimerPosition -= Timings.H_Max;
 		PPU.VTimerPosition++;
@@ -335,14 +335,14 @@ void S9xUpdateIRQPositions (void)
 		if (CPU.V_Counter == PPU.VTimerPosition)
 			Timings.NextIRQTimer = 0;
 		else
-			Timings.NextIRQTimer = CyclesUntilNext (0, PPU.VTimerPosition);
+			Timings.NextIRQTimer = CyclesUntilNext (Timings.IRQTriggerCycles, PPU.VTimerPosition);
 	}
 	else
 	{
 		Timings.NextIRQTimer = CyclesUntilNext (PPU.HTimerPosition, PPU.VTimerPosition);
 	}
 
-	#ifdef DEBUGGER
+#ifdef DEBUGGER
 	S9xTraceFormattedMessage("--- IRQ Timer set  HTimer:%d Pos:%04d  VTimer:%d Pos:%03d",
 		PPU.HTimerEnabled, PPU.HTimerPosition, PPU.VTimerEnabled, PPU.VTimerPosition);
 #endif
@@ -1833,6 +1833,7 @@ uint8 S9xGetCPU (uint16 Address)
 				byte = CPU.IRQLine ? 0x80 : 0;
 				CPU.IRQLine = FALSE;
 				S9xUpdateIRQPositions();
+
 				return (byte | (OpenBus & 0x7f));
 
 			case 0x4212: // HVBJOY
