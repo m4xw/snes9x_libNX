@@ -183,7 +183,7 @@ else ifeq ($(platform), xenon)
    STATIC_LINKING = 1
 
 # Nintendo Game Cube / Wii / WiiU
-else ifneq (,$(filter $(platform), ngc wii wiiu switch))
+else ifneq (,$(filter $(platform), ngc wii wiiu))
    TARGET := $(TARGET_NAME)_libretro_$(platform).a
    CC = $(DEVKITPPC)/bin/powerpc-eabi-gcc$(EXE_EXT)
    CXX = $(DEVKITPPC)/bin/powerpc-eabi-g++$(EXE_EXT)
@@ -203,16 +203,25 @@ else ifneq (,$(filter $(platform), ngc wii wiiu switch))
    # Nintendo Game Cube
    else ifneq (,$(findstring ngc,$(platform)))
       CXXFLAGS += -DGEKKO -mrvl
-
-    # Nintendo Switch (libtransistor)
-    else ifeq ($(platform), switch)
-        EXT=a
-            TARGET := $(TARGET_NAME)_libretro_$(platform).$(EXT)
-            CXXFLAGS := -Wno-register
-            include $(LIBTRANSISTOR_HOME)/libtransistor.mk
-            STATIC_LINKING=1
-            STATIC_LINKING_LINK=1
     endif
+
+# Nintendo Switch (libnx)
+else ifeq ($(platform), switch)
+    INCLUDE := -iquote $(DEVKITPRO)/libnx/include/switch/
+    EXT=a
+    TARGET := $(TARGET_NAME)_libretro_$(platform).$(EXT)
+    CFLAGS	:=	-g \
+                -O2 \
+                -fomit-frame-pointer \
+                -ffunction-sections \
+                -fdata-sections -march=armv8-a -mtune=cortex-a57 -mtp=soft -fPIE
+    CFLAGS	+=	$(INCLUDE)  -D__SWITCH__=1
+    CXXFLAGS := $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
+    ASFLAGS	:= -g $(ARCH) -march=armv8-a -mtune=cortex-a57 -mtp=soft -fPIE
+    ARFLAGS := rcs
+    STATIC_LINKING = 1
+    STATIC_LINKING_LINK=1
+    include $(DEVKITPRO)/libnx/switch_rules
 
 # Emscripten
 else ifeq ($(platform), emscripten)
