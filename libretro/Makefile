@@ -210,8 +210,7 @@ else ifeq ($(platform), switch)
     include $(DEVKITPRO)/devkitA64/base_rules
     EXT=a
     TARGET := $(TARGET_NAME)_libretro_$(platform).$(EXT)
-    LD := $(DEVKITPRO)/devkitA64/bin/aarch64-none-elf-ld
-    LDFLAGS += -g -T $(DEVKITPRO)/libnx/switch.ld -L$(LIBNX)/lib -L$(DEVKITPRO)/devkitA64/aarch64-none-elf/lib/ -lstdc++ -lnx
+    LDFLAGS += -g -T $(DEVKITPRO)/libnx/switch.ld -L$(LIBNX)/lib -L$(DEVKITPRO)/devkitA64/aarch64-none-elf/lib/ -lc -lm -lnx
     CFLAGS	+=	-g \
                     -O2 \
                     -fomit-frame-pointer \
@@ -224,7 +223,6 @@ else ifeq ($(platform), switch)
     INCDIRS := -Ideps -Ideps/libz -Ilibretro-common/include -Ideps/stb -I$(DEVKITPRO)/libnx/include/
     CFLAGS += $(INCDIRS)
     STATIC_LINKING = 1
-    STATIC_LINKING_LINK=1
 
 # Emscripten
 else ifeq ($(platform), emscripten)
