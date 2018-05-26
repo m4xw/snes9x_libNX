@@ -716,8 +716,6 @@ void S9xSelectTileConverter (int depth, bool8 hires, bool8 sub, bool8 mosaic)
 #define SELECT_PALETTE() \
 	if (BG.DirectColourMode) \
 	{ \
-		if (IPPU.DirectColourMapsNeedRebuild) \
-			S9xBuildDirectColourMaps(); \
 		GFX.RealScreenColors = DirectColourMaps[(Tile >> 10) & 7]; \
 	} \
 	else \
@@ -1060,8 +1058,6 @@ extern struct SLineMatrixData	LineMatrixData[240];
 	\
 	if (DCMODE) \
 	{ \
-		if (IPPU.DirectColourMapsNeedRebuild) \
-			S9xBuildDirectColourMaps(); \
 		GFX.RealScreenColors = DirectColourMaps[0]; \
 	} \
 	else \
@@ -1158,8 +1154,6 @@ extern struct SLineMatrixData	LineMatrixData[240];
 	\
 	if (DCMODE) \
 	{ \
-		if (IPPU.DirectColourMapsNeedRebuild) \
-			S9xBuildDirectColourMaps(); \
 		GFX.RealScreenColors = DirectColourMaps[0]; \
 	} \
 	else \

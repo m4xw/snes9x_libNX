@@ -225,7 +225,6 @@ struct InternalPPU
 	struct ClipData Clip[2][6];
 	bool8	ColorsChanged;
 	bool8	OBJChanged;
-	bool8	DirectColourMapsNeedRebuild;
 	uint8	*TileCache[7];
 	uint8	*TileCached[7];
 	uint16	VRAMReadBuffer;
@@ -391,7 +390,7 @@ void S9xSetPPU (uint8, uint16);
 uint8 S9xGetPPU (uint16);
 void S9xSetCPU (uint8, uint16);
 uint8 S9xGetCPU (uint16);
-void S9xUpdateHVTimerPosition (void);
+void S9xUpdateIRQPositions (void);
 void S9xFixColourBrightness (void);
 void S9xDoAutoJoypad (void);
 
