@@ -268,7 +268,37 @@ static inline void S9xTryGunLatch (bool force)
 	}
 }
 
-void S9xUpdateHVTimerPosition (void)
+static int CyclesUntilNext (int hc, int vc)
+{
+	int32 total = 0;
+	int vpos = CPU.V_Counter;
+
+	if (vc - vpos >= 0)
+	{
+		// It's still in this frame */
+		// Add number of lines
+		total += (vc - vpos) * Timings.H_Max;
+		// If line 240 is in there and we're odd, subtract a dot
+		if (vpos <= 240 && vc > 240 && Timings.InterlaceField & !IPPU.Interlace)
+			total -= ONE_DOT_CYCLE;
+	}
+	else
+	{
+		total += (Timings.V_Max - vpos) * Timings.H_Max;
+		if (vpos <= 240 && Timings.InterlaceField && !IPPU.Interlace)
+			total -= ONE_DOT_CYCLE;
+
+		total += (vc) * Timings.H_Max;
+		if (vc > 240 && !Timings.InterlaceField && !IPPU.Interlace)
+			total -= ONE_DOT_CYCLE;
+	}
+
+	total += hc;
+
+	return total;
+}
+
+void S9xUpdateIRQPositions (void)
 {
 	PPU.HTimerPosition = PPU.IRQHBeamPos * ONE_DOT_CYCLE + Timings.IRQTriggerCycles;
 	if (Timings.H_Max == Timings.H_Max_Master)	// 1364
@@ -290,7 +320,29 @@ void S9xUpdateHVTimerPosition (void)
 			PPU.VTimerPosition = 0;
 	}
 
-#ifdef DEBUGGER
+	if (!PPU.HTimerEnabled && !PPU.VTimerEnabled)
+	{
+		Timings.NextIRQTimer = 0x0fffffff;
+	}
+	else if (PPU.HTimerEnabled && !PPU.VTimerEnabled)
+	{
+		Timings.NextIRQTimer = PPU.HTimerPosition;
+		if (CPU.Cycles > Timings.NextIRQTimer)
+			Timings.NextIRQTimer += Timings.H_Max;
+	}
+	else if (!PPU.HTimerEnabled && PPU.VTimerEnabled)
+	{
+		if (CPU.V_Counter == PPU.VTimerPosition)
+			Timings.NextIRQTimer = 0;
+		else
+			Timings.NextIRQTimer = CyclesUntilNext (0, PPU.VTimerPosition);
+	}
+	else
+	{
+		Timings.NextIRQTimer = CyclesUntilNext (PPU.HTimerPosition, PPU.VTimerPosition);
+	}
+
+	#ifdef DEBUGGER
 	S9xTraceFormattedMessage("--- IRQ Timer set  HTimer:%d Pos:%04d  VTimer:%d Pos:%03d",
 		PPU.HTimerEnabled, PPU.HTimerPosition, PPU.VTimerEnabled, PPU.VTimerPosition);
 #endif
@@ -364,9 +416,9 @@ void S9xSetPPU (uint8 Byte, uint16 Address)
 					if (PPU.Brightness != (Byte & 0xf))
 					{
 						IPPU.ColorsChanged = TRUE;
-						IPPU.DirectColourMapsNeedRebuild = TRUE;
 						PPU.Brightness = Byte & 0xf;
 						S9xFixColourBrightness();
+						S9xBuildDirectColourMaps();
 						if (PPU.Brightness > IPPU.MaxBrightness)
 							IPPU.MaxBrightness = PPU.Brightness;
 					}
@@ -1502,20 +1554,16 @@ void S9xSetCPU (uint8 Byte, uint16 Address)
 				else
 					PPU.HTimerEnabled = FALSE;
 
-				if (CPU.IRQLine && !PPU.HTimerEnabled && PPU.VTimerEnabled)
-					CPU.IRQTransition = TRUE;
-
-				if (!PPU.HTimerEnabled && !PPU.VTimerEnabled)
-				{
+				if (!(Byte & 0x10) && !(Byte & 0x20))
 					CPU.IRQLine = FALSE;
-					CPU.IRQTransition = FALSE;
-				}
+
+				S9xUpdateIRQPositions();
 
 				// NMI can trigger immediately during VBlank as long as NMI_read ($4210) wasn't cleard.
 				if ((Byte & 0x80) && !(Memory.FillRAM[0x4200] & 0x80) &&
 					(CPU.V_Counter >= PPU.ScreenHeight + FIRST_VISIBLE_LINE) && (Memory.FillRAM[0x4210] & 0x80))
 				{
-					
+
 					// FIXME: triggered at HC+=6, checked just before the final CPU cycle,
 					// then, when to call S9xOpcode_NMI()?
 					CPU.NMIPending = TRUE;
@@ -1576,7 +1624,7 @@ if (Settings.TraceHCEvent)
 				pos = PPU.IRQHBeamPos;
 				PPU.IRQHBeamPos = (PPU.IRQHBeamPos & 0xff00) | Byte;
 				if (PPU.IRQHBeamPos != pos)
-					S9xUpdateHVTimerPosition();
+					S9xUpdateIRQPositions();
 			#ifdef DEBUGGER
 				missing.hirq_pos = PPU.IRQHBeamPos;
 			#endif
@@ -1586,7 +1634,7 @@ if (Settings.TraceHCEvent)
 				pos = PPU.IRQHBeamPos;
 				PPU.IRQHBeamPos = (PPU.IRQHBeamPos & 0xff) | ((Byte & 1) << 8);
 				if (PPU.IRQHBeamPos != pos)
-					S9xUpdateHVTimerPosition();
+					S9xUpdateIRQPositions();
 			#ifdef DEBUGGER
 				missing.hirq_pos = PPU.IRQHBeamPos;
 			#endif
@@ -1596,7 +1644,7 @@ if (Settings.TraceHCEvent)
 				pos = PPU.IRQVBeamPos;
 				PPU.IRQVBeamPos = (PPU.IRQVBeamPos & 0xff00) | Byte;
 				if (PPU.IRQVBeamPos != pos)
-					S9xUpdateHVTimerPosition();
+					S9xUpdateIRQPositions();
 			#ifdef DEBUGGER
 				missing.virq_pos = PPU.IRQVBeamPos;
 			#endif
@@ -1606,7 +1654,7 @@ if (Settings.TraceHCEvent)
 				pos = PPU.IRQVBeamPos;
 				PPU.IRQVBeamPos = (PPU.IRQVBeamPos & 0xff) | ((Byte & 1) << 8);
 				if (PPU.IRQVBeamPos != pos)
-					S9xUpdateHVTimerPosition();
+					S9xUpdateIRQPositions();
 			#ifdef DEBUGGER
 				missing.virq_pos = PPU.IRQVBeamPos;
 			#endif
@@ -1617,9 +1665,7 @@ if (Settings.TraceHCEvent)
 					return;
 				// XXX: Not quite right...
                 if (Byte) {
-                    CPU.PrevCycles = CPU.Cycles;
-					CPU.Cycles += Timings.DMACPUSync;
-                    S9xCheckInterrupts();
+				CPU.Cycles += Timings.DMACPUSync;
                 }
 				if (Byte & 0x01)
 					S9xDoDMA(0);
@@ -1786,7 +1832,7 @@ uint8 S9xGetCPU (uint16 Address)
 			case 0x4211: // TIMEUP
 				byte = CPU.IRQLine ? 0x80 : 0;
 				CPU.IRQLine = FALSE;
-				CPU.IRQTransition = FALSE;
+				S9xUpdateIRQPositions();
 				return (byte | (OpenBus & 0x7f));
 
 			case 0x4212: // HVBJOY
@@ -1835,7 +1881,6 @@ void S9xResetPPUFast (void)
 	PPU.RecomputeClipWindows = TRUE;
 	IPPU.ColorsChanged = TRUE;
 	IPPU.OBJChanged = TRUE;
-	IPPU.DirectColourMapsNeedRebuild = TRUE;
 	memset(IPPU.TileCached[TILE_2BIT], 0, MAX_2BIT_TILES);
 	memset(IPPU.TileCached[TILE_4BIT], 0, MAX_4BIT_TILES);
 	memset(IPPU.TileCached[TILE_8BIT], 0, MAX_8BIT_TILES);
@@ -1843,6 +1888,7 @@ void S9xResetPPUFast (void)
 	memset(IPPU.TileCached[TILE_2BIT_ODD], 0, MAX_2BIT_TILES);
 	memset(IPPU.TileCached[TILE_4BIT_EVEN], 0, MAX_4BIT_TILES);
 	memset(IPPU.TileCached[TILE_4BIT_ODD], 0, MAX_4BIT_TILES);
+	S9xBuildDirectColourMaps();
 }
 
 void S9xSoftResetPPU (void)
@@ -1982,7 +2028,6 @@ void S9xSoftResetPPU (void)
 		memset(&IPPU.Clip[c], 0, sizeof(struct ClipData));
 	IPPU.ColorsChanged = TRUE;
 	IPPU.OBJChanged = TRUE;
-	IPPU.DirectColourMapsNeedRebuild = TRUE;
 	memset(IPPU.TileCached[TILE_2BIT], 0, MAX_2BIT_TILES);
 	memset(IPPU.TileCached[TILE_4BIT], 0, MAX_4BIT_TILES);
 	memset(IPPU.TileCached[TILE_8BIT], 0, MAX_8BIT_TILES);
@@ -2012,6 +2057,7 @@ void S9xSoftResetPPU (void)
 	IPPU.FrameSkip = 0;
 
 	S9xFixColourBrightness();
+	S9xBuildDirectColourMaps();
 
 	for (int c = 0; c < 0x8000; c += 0x100)
 		memset(&Memory.FillRAM[c], c >> 8, 0x100);
