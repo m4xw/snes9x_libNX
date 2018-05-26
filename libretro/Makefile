@@ -207,21 +207,24 @@ else ifneq (,$(filter $(platform), ngc wii wiiu))
 
 # Nintendo Switch (libnx)
 else ifeq ($(platform), switch)
-    INCLUDE := -iquote $(DEVKITPRO)/libnx/include/switch/
+    include $(DEVKITPRO)/devkitA64/base_rules
     EXT=a
     TARGET := $(TARGET_NAME)_libretro_$(platform).$(EXT)
-    CFLAGS	:=	-g \
-                -O2 \
-                -fomit-frame-pointer \
-                -ffunction-sections \
-                -fdata-sections -march=armv8-a -mtune=cortex-a57 -mtp=soft -fPIE
+    LD := $(DEVKITPRO)/devkitA64/bin/aarch64-none-elf-ld
+    LDFLAGS += -g -T $(DEVKITPRO)/libnx/switch.ld -L$(LIBNX)/lib -L$(DEVKITPRO)/devkitA64/aarch64-none-elf/lib/ -lstdc++ -lnx
+    CFLAGS	+=	-g \
+                    -O2 \
+                    -fomit-frame-pointer \
+                    -ffunction-sections \
+                    -fdata-sections -march=armv8-a -mtune=cortex-a57 -fPIE -mtp=soft 
     CFLAGS	+=	$(INCLUDE)  -D__SWITCH__=1
     CXXFLAGS := $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
-    ASFLAGS	:= -g $(ARCH) -march=armv8-a -mtune=cortex-a57 -mtp=soft -fPIE
     ARFLAGS := rcs
+    LIBDIRS	:= $(PORTLIBS) $(LIBNX) $(DEVKITPRO)/devkitA64/aarch64-none-elf/lib/ .
+    INCDIRS := -Ideps -Ideps/libz -Ilibretro-common/include -Ideps/stb -I$(DEVKITPRO)/libnx/include/
+    CFLAGS += $(INCDIRS)
     STATIC_LINKING = 1
     STATIC_LINKING_LINK=1
-    include $(DEVKITPRO)/libnx/switch_rules
 
 # Emscripten
 else ifeq ($(platform), emscripten)
