@@ -22,10 +22,12 @@
 
   (c) Copyright 2006 - 2007  nitsuja
 
-  (c) Copyright 2009 - 2011  BearOso,
+  (c) Copyright 2009 - 2018  BearOso,
                              OV2
 
-  (c) Copyright 2011 - 2016  Hans-Kristian Arntzen,
+  (c) Copyright 2017         qwertymodo
+
+  (c) Copyright 2011 - 2017  Hans-Kristian Arntzen,
                              Daniel De Matteis
                              (Under no circumstances will commercial rights be given)
 
@@ -122,6 +124,9 @@
   Sound emulator code used in 1.52+
   (c) Copyright 2004 - 2007  Shay Green (gblargg@gmail.com)
 
+  S-SMP emulator code used in 1.54+
+  (c) Copyright 2016         byuu
+
   SH assembler code partly based on x86 assembler code
   (c) Copyright 2002 - 2004  Marcus Comstedt (marcus@mc.pp.se)
 
@@ -135,7 +140,7 @@
   (c) Copyright 2006 - 2007  Shay Green
 
   GTK+ GUI code
-  (c) Copyright 2004 - 2011  BearOso
+  (c) Copyright 2004 - 2018  BearOso
 
   Win32 GUI code
   (c) Copyright 2003 - 2006  blip,
@@ -143,14 +148,14 @@
                              Matthew Kendora,
                              Nach,
                              nitsuja
-  (c) Copyright 2009 - 2011  OV2
+  (c) Copyright 2009 - 2018  OV2
 
   Mac OS GUI code
   (c) Copyright 1998 - 2001  John Stiles
   (c) Copyright 2001 - 2011  zones
 
   Libretro port
-  (c) Copyright 2011 - 2016  Hans-Kristian Arntzen,
+  (c) Copyright 2011 - 2017  Hans-Kristian Arntzen,
                              Daniel De Matteis
                              (Under no circumstances will commercial rights be given)
 
@@ -2472,6 +2477,7 @@ void CMemory::InitROM (void)
 
 		// SPC7110
 		case 0xF93A:
+			// Fall through
 			Settings.SPC7110RTC = TRUE;
 		case 0xF53A:
 			Settings.SPC7110 = TRUE;
@@ -2993,9 +2999,9 @@ void CMemory::map_LoROMSRAM (void)
         uint32 hi;
 
         if (ROMSize > 11 || SRAMSize > 5)
-             hi = 0x7fff;
+            hi = 0x7fff;
         else
-             hi = 0xffff;
+            hi = 0xffff;
 
 	map_index(0x70, 0x7d, 0x0000, hi, MAP_LOROM_SRAM, MAP_TYPE_RAM);
 	map_index(0xf0, 0xff, 0x0000, hi, MAP_LOROM_SRAM, MAP_TYPE_RAM);
@@ -3438,6 +3444,26 @@ void CMemory::Map_ExtendedHiROMMap (void)
 	map_WriteProtectROM();
 }
 
+void CMemory::Map_SPC7110HiROMMap (void)
+{
+	if (log_cb) log_cb(RETRO_LOG_INFO, "Map_SPC7110HiROMMap\n");
+	map_System();
+
+	map_index(0x00, 0x00, 0x6000, 0x7fff, MAP_HIROM_SRAM, MAP_TYPE_RAM);
+	map_hirom(0x00, 0x0f, 0x8000, 0xffff, CalculatedSize);
+	map_index(0x30, 0x30, 0x6000, 0x7fff, MAP_HIROM_SRAM, MAP_TYPE_RAM);
+	if(Memory.ROMSize >= 13)
+		map_hirom_offset(0x40, 0x4f, 0x0000, 0xffff, CalculatedSize, 0x600000);
+	map_index(0x50, 0x50, 0x0000, 0xffff, MAP_SPC7110_DRAM, MAP_TYPE_ROM);
+	map_hirom(0x80, 0x8f, 0x8000, 0xffff, CalculatedSize);
+	map_hirom_offset(0xc0, 0xcf, 0x0000, 0xffff, CalculatedSize, 0);
+	map_index(0xd0, 0xff, 0x0000, 0xffff, MAP_SPC7110_ROM,  MAP_TYPE_ROM);
+
+	map_WRAM();
+
+	map_WriteProtectROM();
+}
+
 void CMemory::Map_SameGameHiROMMap (void)
 {
 	if (log_cb) log_cb(RETRO_LOG_INFO, "Map_SameGameHiROMMap\n");
@@ -3453,25 +3479,6 @@ void CMemory::Map_SameGameHiROMMap (void)
 	map_hirom_offset(0xe0, 0xff, 0x0000, 0xffff, Multi.cartSizeB, Multi.cartOffsetB);
 
 	map_HiROMSRAM();
-	map_WRAM();
-
-	map_WriteProtectROM();
-}
-
-void CMemory::Map_SPC7110HiROMMap (void)
-{
-	if (log_cb) log_cb(RETRO_LOG_INFO, "Map_SPC7110HiROMMap\n");
-	map_System();
-
-	map_index(0x00, 0x00, 0x6000, 0x7fff, MAP_HIROM_SRAM, MAP_TYPE_RAM);
-	map_hirom(0x00, 0x0f, 0x8000, 0xffff, CalculatedSize);
-	map_index(0x30, 0x30, 0x6000, 0x7fff, MAP_HIROM_SRAM, MAP_TYPE_RAM);
-	map_hirom_offset(0x40, 0x4f, 0x0000, 0xffff, CalculatedSize, 0x600000);
-	map_index(0x50, 0x50, 0x0000, 0xffff, MAP_SPC7110_DRAM, MAP_TYPE_ROM);
-	map_hirom(0x80, 0x8f, 0x8000, 0xffff, CalculatedSize);
-	map_hirom_offset(0xc0, 0xcf, 0x0000, 0xffff, CalculatedSize, 0);
-	map_index(0xd0, 0xff, 0x0000, 0xffff, MAP_SPC7110_ROM,  MAP_TYPE_ROM);
-
 	map_WRAM();
 
 	map_WriteProtectROM();
