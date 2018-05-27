@@ -273,7 +273,7 @@ static int CyclesUntilNext (int hc, int vc)
 	int32 total = 0;
 	int vpos = CPU.V_Counter;
 
-	if (vc - vpos >= 0)
+	if (vc - vpos > 0)
 	{
 		// It's still in this frame */
 		// Add number of lines
@@ -284,6 +284,11 @@ static int CyclesUntilNext (int hc, int vc)
 	}
 	else
 	{
+		if (vc == vpos && hc > CPU.Cycles)
+		{
+			return hc;
+		}
+
 		total += (Timings.V_Max - vpos) * Timings.H_Max;
 		if (vpos <= 240 && Timings.InterlaceField && !IPPU.Interlace)
 			total -= ONE_DOT_CYCLE;
@@ -333,7 +338,7 @@ void S9xUpdateIRQPositions (void)
 	else if (!PPU.HTimerEnabled && PPU.VTimerEnabled)
 	{
 		if (CPU.V_Counter == PPU.VTimerPosition)
-			Timings.NextIRQTimer = 0;
+			Timings.NextIRQTimer = Timings.IRQTriggerCycles;
 		else
 			Timings.NextIRQTimer = CyclesUntilNext (Timings.IRQTriggerCycles, PPU.VTimerPosition);
 	}
@@ -1555,7 +1560,10 @@ void S9xSetCPU (uint8 Byte, uint16 Address)
 					PPU.HTimerEnabled = FALSE;
 
 				if (!(Byte & 0x10) && !(Byte & 0x20))
+				{
 					CPU.IRQLine = FALSE;
+					CPU.IRQTransition = FALSE;
+				}
 
 				S9xUpdateIRQPositions();
 
@@ -1832,6 +1840,7 @@ uint8 S9xGetCPU (uint16 Address)
 			case 0x4211: // TIMEUP
 				byte = CPU.IRQLine ? 0x80 : 0;
 				CPU.IRQLine = FALSE;
+				CPU.IRQTransition = FALSE;
 				S9xUpdateIRQPositions();
 
 				return (byte | (OpenBus & 0x7f));

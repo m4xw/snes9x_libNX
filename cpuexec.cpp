@@ -237,36 +237,39 @@ void S9xMainLoop (void)
 				{
 					CPU.WaitingForInterrupt = FALSE;
 					Registers.PCw++;
-					CPU.Cycles += 14;
+					CPU.Cycles += ONE_CYCLE;
 					while (CPU.Cycles >= CPU.NextEvent)
 						S9xDoHEventProcessing();
 				}
 
 				S9xOpcode_NMI();
-#ifdef CPU_OPCODE_INSTRUMENTATION
-            puts("** EXEC=NMI");
-#endif
 			}
 		}
 
-		if ((CPU.Cycles >= Timings.NextIRQTimer || CPU.IRQExternal) && !CPU.IRQLine)
+		if (CPU.IRQTransition)
+		{
+			if (CPU.WaitingForInterrupt)
+			{
+				CPU.WaitingForInterrupt = FALSE;
+				Registers.PCw++;
+				CPU.Cycles += ONE_CYCLE;
+				while (CPU.Cycles >= CPU.NextEvent)
+					S9xDoHEventProcessing();
+			}
+
+			S9xUpdateIRQPositions();
+			CPU.IRQPending = Timings.IRQPendCount;
+			CPU.IRQTransition = FALSE;
+			CPU.IRQLine = TRUE;
+		}
+
+		if ((CPU.Cycles >= Timings.NextIRQTimer || CPU.IRQExternal) && !CPU.IRQLine && !CPU.IRQTransition)
 		{
 			if (CPU.IRQPending)
 				CPU.IRQPending--;
 			else
 			{
-				if (CPU.WaitingForInterrupt)
-				{
-					CPU.WaitingForInterrupt = FALSE;
-					Registers.PCw++;
-					CPU.Cycles += 14;
-					while (CPU.Cycles >= CPU.NextEvent)
-						S9xDoHEventProcessing();
-				}
-
-				S9xUpdateIRQPositions();
-				CPU.IRQPending = Timings.IRQPendCount;
-				CPU.IRQLine = TRUE;
+				CPU.IRQTransition = TRUE;
 			}
 		}
 
@@ -331,9 +334,6 @@ void S9xMainLoop (void)
 				Opcodes = S9xOpcodesSlow;
 		}
 
-#ifdef CPU_OPCODE_INSTRUMENTATION
-      printf("EXEC=%.6X\n",Registers.PBPC);
-#endif
 		Registers.PCw++;
 		(*Opcodes[Op].S9xOpcode)();
 

@@ -639,10 +639,10 @@ static inline void REGISTER_2118_linear (uint8 Byte)
         }
 #endif
 
+
 static inline void REGISTER_2119 (uint8 Byte)
 {
 	CHECK_INBLANK();
-
 	uint32	address;
 
 	if (PPU.VMA.FullGraphicCount)
