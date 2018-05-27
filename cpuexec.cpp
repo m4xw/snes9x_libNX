@@ -237,6 +237,9 @@ void S9xMainLoop (void)
 				{
 					CPU.WaitingForInterrupt = FALSE;
 					Registers.PCw++;
+					CPU.Cycles += 14;
+					while (CPU.Cycles >= CPU.NextEvent)
+						S9xDoHEventProcessing();
 				}
 
 				S9xOpcode_NMI();
@@ -246,7 +249,7 @@ void S9xMainLoop (void)
 			}
 		}
 
-		if (CPU.Cycles >= Timings.NextIRQTimer || CPU.IRQExternal)
+		if ((CPU.Cycles >= Timings.NextIRQTimer || CPU.IRQExternal) && !CPU.IRQLine)
 		{
 			if (CPU.IRQPending)
 				CPU.IRQPending--;
@@ -256,18 +259,19 @@ void S9xMainLoop (void)
 				{
 					CPU.WaitingForInterrupt = FALSE;
 					Registers.PCw++;
+					CPU.Cycles += 14;
+					while (CPU.Cycles >= CPU.NextEvent)
+						S9xDoHEventProcessing();
 				}
 
 				S9xUpdateIRQPositions();
 				CPU.IRQPending = Timings.IRQPendCount;
-
-				if (!CheckFlag(IRQ))
-				{
-					CPU.IRQLine = TRUE;
-					S9xOpcode_IRQ();
-				}
+				CPU.IRQLine = TRUE;
 			}
 		}
+
+		if (CPU.IRQLine && !CheckFlag(IRQ))
+			S9xOpcode_IRQ();
 
 	#ifdef DEBUGGER
 		if ((CPU.Flags & BREAK_FLAG) && !(CPU.Flags & SINGLE_STEP_FLAG))
