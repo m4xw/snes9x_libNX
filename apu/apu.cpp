@@ -22,12 +22,10 @@
 
   (c) Copyright 2006 - 2007  nitsuja
 
-  (c) Copyright 2009 - 2018  BearOso,
+  (c) Copyright 2009 - 2016  BearOso,
                              OV2
 
-  (c) Copyright 2017         qwertymodo
-
-  (c) Copyright 2011 - 2017  Hans-Kristian Arntzen,
+  (c) Copyright 2011 - 2016  Hans-Kristian Arntzen,
                              Daniel De Matteis
                              (Under no circumstances will commercial rights be given)
 
@@ -140,7 +138,7 @@
   (c) Copyright 2006 - 2007  Shay Green
 
   GTK+ GUI code
-  (c) Copyright 2004 - 2018  BearOso
+  (c) Copyright 2004 - 2016  BearOso
 
   Win32 GUI code
   (c) Copyright 2003 - 2006  blip,
@@ -148,14 +146,14 @@
                              Matthew Kendora,
                              Nach,
                              nitsuja
-  (c) Copyright 2009 - 2018  OV2
+  (c) Copyright 2009 - 2016  OV2
 
   Mac OS GUI code
   (c) Copyright 1998 - 2001  John Stiles
   (c) Copyright 2001 - 2011  zones
 
   Libretro port
-  (c) Copyright 2011 - 2017  Hans-Kristian Arntzen,
+  (c) Copyright 2011 - 2016  Hans-Kristian Arntzen,
                              Daniel De Matteis
                              (Under no circumstances will commercial rights be given)
 
@@ -274,7 +272,7 @@ static void DeStereo (uint8 *buffer, int sample_count)
 	int16	*buf = (int16 *) buffer;
 	int32	s1, s2;
 
-	for (int i = 0; i < (sample_count >> 1); i++)
+	for (int i = 0; i < sample_count >> 1; i++)
 	{
 		s1 = (int32) buf[2 * i];
 		s2 = (int32) buf[2 * i + 1];
@@ -348,7 +346,7 @@ bool8 S9xMixSamples (uint8 *buffer, int sample_count)
 				if (msu::resampler->avail() >= sample_count)
 				{
 					msu::resampler->read((short *)msu::resample_buffer, sample_count);
-					for (int i = 0; i < sample_count; ++i)
+					for (uint32 i = 0; i < sample_count; ++i)
 						*((int16*)(dest+(i * 2))) += *((int16*)(msu::resample_buffer +(i * 2)));
 				}
 				else // should never occur
@@ -514,7 +512,7 @@ bool8 S9xInitSound (int buffer_ms, int lag_ms)
 		return (FALSE);
 	if (msu::landing_buffer)
 		delete[] msu::landing_buffer;
-	msu::landing_buffer = (uint8*) new uint32[msu::buffer_size / 2]; // Ensure 4-byte alignment
+	msu::landing_buffer = new uint8[msu::buffer_size * 2];
 	if (!msu::landing_buffer)
 		return (FALSE);
 
@@ -758,6 +756,7 @@ void S9xAPULoadState (uint8 *block)
 	SNES::dsp.clock = SNES::get_le32(ptr);
 	ptr += sizeof(int32);
 	memcpy (SNES::cpu.registers, ptr, 4);
+	ptr += 4;
 }
 
 static void to_var_from_buf (uint8 **buf, void *var, size_t size)
@@ -898,3 +897,4 @@ bool8 S9xSPCDump (const char *filename)
 
 	return (TRUE);
 }
+

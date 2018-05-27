@@ -131,6 +131,8 @@ public:
   unsigned rtc_index;
 
   static const unsigned months[12];
+
+  unsigned programmrom_size;
 };
 
 #endif

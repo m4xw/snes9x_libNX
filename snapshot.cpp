@@ -22,12 +22,10 @@
 
   (c) Copyright 2006 - 2007  nitsuja
 
-  (c) Copyright 2009 - 2018  BearOso,
+  (c) Copyright 2009 - 2016  BearOso,
                              OV2
 
-  (c) Copyright 2017         qwertymodo
-
-  (c) Copyright 2011 - 2017  Hans-Kristian Arntzen,
+  (c) Copyright 2011 - 2016  Hans-Kristian Arntzen,
                              Daniel De Matteis
                              (Under no circumstances will commercial rights be given)
 
@@ -140,7 +138,7 @@
   (c) Copyright 2006 - 2007  Shay Green
 
   GTK+ GUI code
-  (c) Copyright 2004 - 2018  BearOso
+  (c) Copyright 2004 - 2016  BearOso
 
   Win32 GUI code
   (c) Copyright 2003 - 2006  blip,
@@ -148,14 +146,14 @@
                              Matthew Kendora,
                              Nach,
                              nitsuja
-  (c) Copyright 2009 - 2018  OV2
+  (c) Copyright 2009 - 2016  OV2
 
   Mac OS GUI code
   (c) Copyright 1998 - 2001  John Stiles
   (c) Copyright 2001 - 2011  zones
 
   Libretro port
-  (c) Copyright 2011 - 2017  Hans-Kristian Arntzen,
+  (c) Copyright 2011 - 2016  Hans-Kristian Arntzen,
                              Daniel De Matteis
                              (Under no circumstances will commercial rights be given)
 
@@ -1198,7 +1196,7 @@ void S9xResetSaveTimer (bool8 dontsave)
 		char	drive[_MAX_DRIVE + 1], dir[_MAX_DIR + 1], def[_MAX_FNAME + 1], ext[_MAX_EXT + 1];
 
 		_splitpath(Memory.ROMFilename, drive, dir, def, ext);
-		snprintf(filename, PATH_MAX + 1, "%s%s%s.%.*s", S9xGetDirectory(SNAPSHOT_DIR), SLASH_STR, def, _MAX_EXT - 1, "oops");
+		sprintf(filename, "%s%s%s.%.*s", S9xGetDirectory(SNAPSHOT_DIR), SLASH_STR, def, _MAX_EXT - 1, "oops");
 		S9xMessage(S9X_INFO, S9X_FREEZE_FILE_INFO, SAVE_INFO_OOPS);
 		S9xFreezeGame(filename);
 	}
@@ -1312,10 +1310,10 @@ bool8 S9xUnfreezeGame (const char *filename)
 
 void S9xFreezeToStream (STREAM stream)
 {
-	char	buffer[8192];
+	char	buffer[1024];
 	uint8	*soundsnapshot = new uint8[SPC_SAVE_STATE_BLOCK_SIZE];
 
-	S9xPackStatus();
+        S9xPackStatus();
 
 	sprintf(buffer, "%s:%04d\n", SNAPSHOT_MAGIC, SNAPSHOT_VERSION);
 	WRITE_STREAM(buffer, strlen(buffer), stream);
@@ -1418,7 +1416,7 @@ int S9xUnfreezeFromStream (STREAM stream)
 	char	buffer[PATH_MAX + 1];
 
 	len = strlen(SNAPSHOT_MAGIC) + 1 + 4 + 1;
-	if (READ_STREAM(buffer, len, stream) != (unsigned int ) len)
+	if (READ_STREAM(buffer, len, stream) != len)
 		return (WRONG_FORMAT);
 
 	if (strncmp(buffer, SNAPSHOT_MAGIC, strlen(SNAPSHOT_MAGIC)) != 0)
@@ -1457,7 +1455,7 @@ int S9xUnfreezeFromStream (STREAM stream)
 	uint8	*local_srtc          = NULL;
 	uint8	*local_rtc_data      = NULL;
 	uint8	*local_bsx_data      = NULL;
-	uint8	*local_msu1_data     = NULL;
+	uint8	*local_msu1_data      = NULL;
 	uint8	*local_screenshot    = NULL;
 	uint8	*local_movie_data    = NULL;
 
@@ -1748,7 +1746,6 @@ int S9xUnfreezeFromStream (STREAM stream)
 		ICPU.ShiftedDB = Registers.DB << 16;
 		S9xSetPCBase(Registers.PBPC);
 		S9xUnpackStatus();
-		S9xUpdateIRQPositions();
 		S9xFixCycles();
 
 		for (int d = 0; d < 8; d++)
@@ -1758,7 +1755,6 @@ int S9xUnfreezeFromStream (STREAM stream)
 		CPU.HDMARanInDMA = 0;
 
 		S9xFixColourBrightness();
-		S9xBuildDirectColourMaps();
 		IPPU.ColorsChanged = TRUE;
 		IPPU.OBJChanged = TRUE;
 		IPPU.RenderThisFrame = TRUE;
@@ -2097,7 +2093,7 @@ static void SkipBlockWithName(STREAM stream, const char *name)
 
 static int UnfreezeBlock (STREAM stream, const char *name, uint8 *block, int size)
 {
-	char	buffer[20];
+	char	buffer[16];
 	int		len = 0, rem = 0;
 	long	rewind = FIND_STREAM(stream);
 
@@ -2138,7 +2134,7 @@ static int UnfreezeBlock (STREAM stream, const char *name, uint8 *block, int siz
 		memset(block, 0, size);
 	}
 
-	if (READ_STREAM(block, len, stream) != (unsigned int) len)
+	if (READ_STREAM(block, len, stream) != len)
 	{
 		REVERT_STREAM(stream, rewind, 0);
 		return (WRONG_FORMAT);
