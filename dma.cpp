@@ -1421,13 +1421,13 @@ void S9xStartHDMA (void)
 
 uint8 S9xDoHDMA (uint8 byte)
 {
-	struct SDMA	*p;
+	struct SDMA *p;
 
 	uint32	ShiftedIBank;
 	uint16	IAddr;
 	bool8	temp;
 	int32	tmpch;
-	int		d;
+	int	d;
 	uint8	mask;
 
 	CPU.InHDMA = TRUE;

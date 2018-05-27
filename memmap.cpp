@@ -2477,8 +2477,8 @@ void CMemory::InitROM (void)
 
 		// SPC7110
 		case 0xF93A:
-			// Fall through
 			Settings.SPC7110RTC = TRUE;
+			// Fall through
 		case 0xF53A:
 			Settings.SPC7110 = TRUE;
 			S9xInitSPC7110();
@@ -2885,6 +2885,7 @@ void CMemory::map_hirom_offset (uint32 bank_s, uint32 bank_e, uint32 addr_s, uin
 			BlockIsRAM[p] = FALSE;
 		}
 	}
+
 	if (auto_export_map)
 	{
 		struct retro_memory_descriptor desc = {0};
@@ -2936,11 +2937,12 @@ void CMemory::map_index (uint32 bank_s, uint32 bank_e, uint32 addr_s, uint32 add
 		for (i = addr_s; i <= addr_e; i += 0x1000)
 		{
 			p = (c << 4) | (i >> 12);
-			Map[p] = (uint8 *) index;
+			Map[p] = (uint8 *) (pint) index;
 			BlockIsROM[p] = isROM;
 			BlockIsRAM[p] = isRAM;
 		}
 	}
+
 	if (auto_export_map)
 	{
 		struct retro_memory_descriptor desc = {0};
@@ -2997,6 +2999,10 @@ void CMemory::map_WRAM (void)
 void CMemory::map_LoROMSRAM (void)
 {
         uint32 hi;
+
+				// libretro fork: Deae Tonosama - Appare Ichiban (Japan) copier protection
+				if( SRAMSize == 0 ) return;
+
 
         if (ROMSize > 11 || SRAMSize > 5)
             hi = 0x7fff;
@@ -3773,8 +3779,8 @@ void CMemory::ApplyROMFixes (void)
 
 	if (!Settings.DisableGameSpecificHacks)
 	{
-		if (match_id("AVCJ"))                                      // Rendering Ranger R2
-			Timings.APUSpeedup = 2;
+		//if (match_id("AVCJ"))                                      // Rendering Ranger R2
+		//	Timings.APUSpeedup = 2;
 		if (match_id("AANJ"))                                      // Chou Aniki
 			Timings.APUSpeedup = 1;
 		if (match_na("CIRCUIT USA"))
@@ -3853,16 +3859,6 @@ void CMemory::ApplyROMFixes (void)
 		{
 			Timings.IRQPendCount = 2;
 			if (log_cb) log_cb(RETRO_LOG_INFO, "IRQ count hack: %d\n", Timings.IRQPendCount);
-		}
-	}
-
-	if (!Settings.DisableGameSpecificHacks)
-	{
-		// XXX: What's happening?
-		if (match_na("X-MEN")) // Spider-Man and the X-Men
-		{
-			Settings.BlockInvalidVRAMAccess = FALSE;
-			if (log_cb) log_cb(RETRO_LOG_INFO, "Invalid VRAM access hack\n");
 		}
 	}
 
