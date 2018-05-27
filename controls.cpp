@@ -22,10 +22,12 @@
 
   (c) Copyright 2006 - 2007  nitsuja
 
-  (c) Copyright 2009 - 2011  BearOso,
+  (c) Copyright 2009 - 2018  BearOso,
                              OV2
 
-  (c) Copyright 2011 - 2016  Hans-Kristian Arntzen,
+  (c) Copyright 2017         qwertymodo
+
+  (c) Copyright 2011 - 2017  Hans-Kristian Arntzen,
                              Daniel De Matteis
                              (Under no circumstances will commercial rights be given)
 
@@ -122,6 +124,9 @@
   Sound emulator code used in 1.52+
   (c) Copyright 2004 - 2007  Shay Green (gblargg@gmail.com)
 
+  S-SMP emulator code used in 1.54+
+  (c) Copyright 2016         byuu
+
   SH assembler code partly based on x86 assembler code
   (c) Copyright 2002 - 2004  Marcus Comstedt (marcus@mc.pp.se)
 
@@ -135,7 +140,7 @@
   (c) Copyright 2006 - 2007  Shay Green
 
   GTK+ GUI code
-  (c) Copyright 2004 - 2011  BearOso
+  (c) Copyright 2004 - 2018  BearOso
 
   Win32 GUI code
   (c) Copyright 2003 - 2006  blip,
@@ -143,14 +148,14 @@
                              Matthew Kendora,
                              Nach,
                              nitsuja
-  (c) Copyright 2009 - 2011  OV2
+  (c) Copyright 2009 - 2018  OV2
 
   Mac OS GUI code
   (c) Copyright 1998 - 2001  John Stiles
   (c) Copyright 2001 - 2011  zones
 
   Libretro port
-  (c) Copyright 2011 - 2016  Hans-Kristian Arntzen,
+  (c) Copyright 2011 - 2017  Hans-Kristian Arntzen,
                              Daniel De Matteis
                              (Under no circumstances will commercial rights be given)
 
@@ -557,6 +562,9 @@ void S9xControlsSoftReset (void)
 			read_idx[i][j]=0;
 
 	FLAG_LATCH = FALSE;
+
+	curcontrollers[0] = newcontrollers[0];
+	curcontrollers[1] = newcontrollers[1];
 }
 
 void S9xUnmapAllControls (void)
@@ -648,6 +656,7 @@ void S9xSetController (int port, enum controllers controller, int8 id1, int8 id2
 				break;
 
 			newcontrollers[port] = JOYPAD0 + id1;
+			curcontrollers[port] = newcontrollers[port];
 			return;
 
 		case CTL_MOUSE:
@@ -660,6 +669,7 @@ void S9xSetController (int port, enum controllers controller, int8 id1, int8 id2
 			}
 
 			newcontrollers[port] = MOUSE0 + id1;
+			curcontrollers[port] = newcontrollers[port];
 			return;
 
 		case CTL_SUPERSCOPE:
@@ -670,6 +680,7 @@ void S9xSetController (int port, enum controllers controller, int8 id1, int8 id2
 			}
 
 			newcontrollers[port] = SUPERSCOPE;
+			curcontrollers[port] = newcontrollers[port];
 			return;
 
 		case CTL_JUSTIFIER:
@@ -682,6 +693,7 @@ void S9xSetController (int port, enum controllers controller, int8 id1, int8 id2
 			}
 
 			newcontrollers[port] = ONE_JUSTIFIER + id1;
+			curcontrollers[port] = newcontrollers[port];
 			return;
 
 		case CTL_MP5:
@@ -700,6 +712,8 @@ void S9xSetController (int port, enum controllers controller, int8 id1, int8 id2
 			}
 
 			newcontrollers[port] = MP5;
+			curcontrollers[port] = newcontrollers[port];
+
 			mp5[port].pads[0] = (id1 < 0) ? NONE : JOYPAD0 + id1;
 			mp5[port].pads[1] = (id2 < 0) ? NONE : JOYPAD0 + id2;
 			mp5[port].pads[2] = (id3 < 0) ? NONE : JOYPAD0 + id3;
@@ -712,6 +726,7 @@ void S9xSetController (int port, enum controllers controller, int8 id1, int8 id2
 	}
 
 	newcontrollers[port] = NONE;
+	curcontrollers[port] = newcontrollers[port];
 }
 
 bool S9xVerifyControllers (void)
@@ -2127,7 +2142,7 @@ void S9xApplyCommand (s9xcommand_t cmd, int16 data1, int16 data2)
 
 			if (data1)
 				mouse[cmd.button.mouse.idx].buttons |=  i;
-			else 
+			else
 				mouse[cmd.button.mouse.idx].buttons &= ~i;
 
 			return;
@@ -2829,8 +2844,9 @@ void S9xSetJoypadLatch (bool latch)
 			switch (i = curcontrollers[n])
 			{
 				case MP5:
-					for (int j = 0, k = mp5[n].pads[j]; j < 4; k = mp5[n].pads[j++])
+					for (int j = 0, k; j < 4; ++j)
 					{
+						k = mp5[n].pads[j];
 						if (k == NONE)
 							continue;
 						do_polling(k);
@@ -3117,8 +3133,9 @@ void S9xControlEOF (void)
 		switch (i = curcontrollers[n])
 		{
 			case MP5:
-				for (j = 0, i = mp5[n].pads[j]; j < 4; i = mp5[n].pads[j++])
+				for (j = 0; j < 4; ++j)
 				{
+					i = mp5[n].pads[j];
 					if (i == NONE)
 						continue;
 

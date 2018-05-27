@@ -22,10 +22,12 @@
 
   (c) Copyright 2006 - 2007  nitsuja
 
-  (c) Copyright 2009 - 2011  BearOso,
+  (c) Copyright 2009 - 2018  BearOso,
                              OV2
 
-  (c) Copyright 2011 - 2016  Hans-Kristian Arntzen,
+  (c) Copyright 2017         qwertymodo
+
+  (c) Copyright 2011 - 2017  Hans-Kristian Arntzen,
                              Daniel De Matteis
                              (Under no circumstances will commercial rights be given)
 
@@ -122,6 +124,9 @@
   Sound emulator code used in 1.52+
   (c) Copyright 2004 - 2007  Shay Green (gblargg@gmail.com)
 
+  S-SMP emulator code used in 1.54+
+  (c) Copyright 2016         byuu
+
   SH assembler code partly based on x86 assembler code
   (c) Copyright 2002 - 2004  Marcus Comstedt (marcus@mc.pp.se)
 
@@ -135,7 +140,7 @@
   (c) Copyright 2006 - 2007  Shay Green
 
   GTK+ GUI code
-  (c) Copyright 2004 - 2011  BearOso
+  (c) Copyright 2004 - 2018  BearOso
 
   Win32 GUI code
   (c) Copyright 2003 - 2006  blip,
@@ -143,14 +148,14 @@
                              Matthew Kendora,
                              Nach,
                              nitsuja
-  (c) Copyright 2009 - 2011  OV2
+  (c) Copyright 2009 - 2018  OV2
 
   Mac OS GUI code
   (c) Copyright 1998 - 2001  John Stiles
   (c) Copyright 2001 - 2011  zones
 
   Libretro port
-  (c) Copyright 2011 - 2016  Hans-Kristian Arntzen,
+  (c) Copyright 2011 - 2017  Hans-Kristian Arntzen,
                              Daniel De Matteis
                              (Under no circumstances will commercial rights be given)
 
@@ -220,6 +225,10 @@ void S9xMainLoop (void)
 	{
 		if (CPU.NMIPending)
 		{
+			#ifdef DEBUGGER
+			if (Settings.TraceHCEvent)
+			    S9xTraceFormattedMessage ("Comparing %d to %d\n", Timings.NMITriggerPos, CPU.Cycles);
+			#endif
 			if (Timings.NMITriggerPos <= CPU.Cycles)
 			{
 				CPU.NMIPending = FALSE;
@@ -228,6 +237,9 @@ void S9xMainLoop (void)
 				{
 					CPU.WaitingForInterrupt = FALSE;
 					Registers.PCw++;
+					CPU.Cycles += 14;
+					while (CPU.Cycles >= CPU.NextEvent)
+						S9xDoHEventProcessing();
 				}
 
 				S9xOpcode_NMI();
@@ -237,7 +249,7 @@ void S9xMainLoop (void)
 			}
 		}
 
-		if (CPU.IRQTransition || CPU.IRQExternal)
+		if ((CPU.Cycles >= Timings.NextIRQTimer || CPU.IRQExternal) && !CPU.IRQLine)
 		{
 			if (CPU.IRQPending)
 				CPU.IRQPending--;
@@ -247,15 +259,19 @@ void S9xMainLoop (void)
 				{
 					CPU.WaitingForInterrupt = FALSE;
 					Registers.PCw++;
+					CPU.Cycles += 14;
+					while (CPU.Cycles >= CPU.NextEvent)
+						S9xDoHEventProcessing();
 				}
 
-				CPU.IRQTransition = FALSE;
+				S9xUpdateIRQPositions();
 				CPU.IRQPending = Timings.IRQPendCount;
-
-				if (!CheckFlag(IRQ))
-					S9xOpcode_IRQ();
+				CPU.IRQLine = TRUE;
 			}
 		}
+
+		if (CPU.IRQLine && !CheckFlag(IRQ))
+			S9xOpcode_IRQ();
 
 	#ifdef DEBUGGER
 		if ((CPU.Flags & BREAK_FLAG) && !(CPU.Flags & SINGLE_STEP_FLAG))
@@ -296,9 +312,7 @@ void S9xMainLoop (void)
 		if (CPU.PCBase)
 		{
 			Op = CPU.PCBase[Registers.PCw];
-			CPU.PrevCycles = CPU.Cycles;
 			CPU.Cycles += CPU.MemSpeed;
-			S9xCheckInterrupts();
 			Opcodes = ICPU.S9xOpcodes;
 		}
 		else
@@ -443,11 +457,11 @@ void S9xDoHEventProcessing (void)
 
 			S9xAPUEndScanline();
 			CPU.Cycles -= Timings.H_Max;
-			CPU.PrevCycles -= Timings.H_Max;
-			S9xAPUSetReferenceTime(CPU.Cycles);
-
-			if ((Timings.NMITriggerPos != 0xffff) && (Timings.NMITriggerPos >= Timings.H_Max))
+			if (Timings.NMITriggerPos != 0xffff)
 				Timings.NMITriggerPos -= Timings.H_Max;
+			if (Timings.NextIRQTimer != 0x0fffffff)
+				Timings.NextIRQTimer -= Timings.H_Max;
+			S9xAPUSetReferenceTime(CPU.Cycles);
 
 			CPU.V_Counter++;
 			if (CPU.V_Counter >= Timings.V_Max)	// V ranges from 0 to Timings.V_Max - 1
@@ -475,7 +489,6 @@ void S9xDoHEventProcessing (void)
 
 				ICPU.Frame++;
 				PPU.HVBeamCounterLatched = 0;
-				CPU.Flags |= SCAN_KEYS_FLAG;
 			}
 
 			// From byuu:
@@ -506,6 +519,7 @@ void S9xDoHEventProcessing (void)
 			{
 				S9xEndScreenRefresh();
 
+				CPU.Flags |= SCAN_KEYS_FLAG;
 #ifdef LAGFIX
 				if (!(GFX.DoInterlace && GFX.InterlaceFrame == 0)) /* MIBR */
                 			finishedFrame = true;
@@ -539,6 +553,10 @@ void S9xDoHEventProcessing (void)
 				Memory.FillRAM[0x4210] = 0x80 | Model->_5A22;
 				if (Memory.FillRAM[0x4200] & 0x80)
 				{
+#ifdef DEBUGGER
+					if (Settings.TraceHCEvent)
+					    S9xTraceFormattedMessage ("NMI Scheduled for next scanline.");
+#endif
 					// FIXME: triggered at HC=6, checked just before the final CPU cycle,
 					// then, when to call S9xOpcode_NMI()?
 					CPU.NMIPending = TRUE;
@@ -586,9 +604,7 @@ void S9xDoHEventProcessing (void)
 			S9xTraceFormattedMessage("*** WRAM Refresh  HC:%04d", CPU.Cycles);
 		#endif
 
-			CPU.PrevCycles = CPU.Cycles;
 			CPU.Cycles += SNES_WRAM_REFRESH_CYCLES;
-			S9xCheckInterrupts();
 
 			S9xReschedule();
 
