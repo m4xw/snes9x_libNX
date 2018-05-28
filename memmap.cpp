@@ -3862,6 +3862,23 @@ void CMemory::ApplyROMFixes (void)
 		}
 	}
 
+	if (!Settings.DisableGameSpecificHacks)
+	{
+		// smp transfer loop problem
+		if (match_na("LITTLE MAGIC") ||
+			  match_nc("Little Magic (Europe)") ||
+				match_nc("Little Magic (Japan)"))
+		{
+			unsigned char patch[] = {0x7e,0xf4,0xb0,0xed,0x7e,0xf4,0xb0,0xe9};
+			if(memcmp(patch,Memory.ROM+0xf9b0,sizeof(patch))==0)
+			{
+				// spc700: bcs => bpl
+				Memory.ROM[0xf9b2]=0x10;
+				Memory.ROM[0xf9b6]=0x10;
+			}
+		}
+	}
+
 	//// SRAM initial value
 
 	if (!Settings.DisableGameSpecificHacks)
