@@ -45,6 +45,7 @@ char g_rom_dir[1024];
 char g_basename[1024];
 bool overclock_cycles = false;
 bool reduce_sprite_flicker = false;
+bool randomize_memory = false;
 int one_c, slow_one_c, two_c;
 
 retro_log_printf_t log_cb = NULL;
