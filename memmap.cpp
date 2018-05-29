@@ -3879,6 +3879,26 @@ void CMemory::ApplyROMFixes (void)
 		}
 	}
 
+	if (!Settings.DisableGameSpecificHacks)
+	{
+		// irq cli problem
+		if (match_nn("MARKOS MAGIC FOOTBALL"))
+		{
+			unsigned char patch1[] = {0x78,0x08,0xC2,0x30,0x48,0xDA,0x5A,0x8B,0x0B,0xE2,0x30};
+			unsigned char patch2[] = {0xC2,0x30,0x2B,0xAB,0x7A,0xFA,0x68,0x28,0x58,0x40};
+			unsigned char patch3[] = {0xC2,0x30,0x48,0xDA,0x5A,0x8B,0x0B,0xE2,0x30,0x4B,0xAB};
+			
+			if((memcmp(patch1,Memory.ROM+0x9a3,sizeof(patch1))==0) &&
+				 (memcmp(patch2,Memory.ROM+0x9b5,sizeof(patch2))==0))
+			{
+				// phk - plb
+				memcpy(ROM+0x9a3,patch3,sizeof(patch3));
+				Memory.ROM[0x9bc]=0x40;
+			}
+		}
+	}
+
+
 	//// SRAM initial value
 
 	if (!Settings.DisableGameSpecificHacks)

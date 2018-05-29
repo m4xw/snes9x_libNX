@@ -130,6 +130,7 @@ void retro_set_environment(retro_environment_t cb)
       { "snes9x_overclock", "SuperFX Frequency; 10MHz|20MHz|40MHz|60MHz|80MHz|100MHz" },
       { "snes9x_overclock_cycles", "Reduce Slowdown (Hack, Unsafe); disabled|compatible|max" },
       { "snes9x_reduce_sprite_flicker", "Reduce Flickering (Hack, Unsafe); disabled|enabled" },
+      { "snes9x_randomize_memory", "Randomize Memory (Unsafe); disabled|enabled" },
       { "snes9x_layer_1", "Show layer 1; enabled|disabled" },
       { "snes9x_layer_2", "Show layer 2; enabled|disabled" },
       { "snes9x_layer_3", "Show layer 3; enabled|disabled" },
@@ -243,6 +244,17 @@ static void update_variables(void)
           reduce_sprite_flicker = true;
         else
           reduce_sprite_flicker = false;
+      }
+
+   var.key = "snes9x_randomize_memory";
+   var.value = NULL;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+      {
+        if (strcmp(var.value, "enabled") == 0)
+          randomize_memory = true;
+        else
+          randomize_memory = false;
       }
 
    int disabled_channels=0;
@@ -644,8 +656,6 @@ bool retro_load_game(const struct retro_game_info *game)
    init_descriptors();
    memorydesc_c = 0;
 
-   update_variables();
-
    if(game->data == NULL && game->size == 0 && game->path != NULL)
       rom_loaded = Memory.LoadROM(game->path);
    else
@@ -687,6 +697,8 @@ bool retro_load_game(const struct retro_game_info *game)
 
    struct retro_memory_map map={ memorydesc+MAX_MAPS-memorydesc_c, memorydesc_c };
    if (rom_loaded) environ_cb(RETRO_ENVIRONMENT_SET_MEMORY_MAPS, &map);
+
+   update_variables();
 
    return rom_loaded;
 }
