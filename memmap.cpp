@@ -2724,7 +2724,6 @@ void CMemory::InitROM (void)
 	   and the NMI handler, time enough for an instruction or two. */
 	// Wild Guns, Mighty Morphin Power Rangers - The Fighting Edition
 	Timings.NMIDMADelay  = 24;
-	Timings.IRQPendCount = 0;
 
 	IPPU.TotalEmulatedFrames = 0;
 
@@ -3000,8 +2999,8 @@ void CMemory::map_LoROMSRAM (void)
 {
         uint32 hi;
 
-				// libretro fork: Deae Tonosama - Appare Ichiban (Japan) copier protection
-				if( SRAMSize == 0 ) return;
+        // libretro fork: Deae Tonosama - Appare Ichiban (Japan) copier protection
+        if( SRAMSize == 0 ) return;
 
 
         if (ROMSize > 11 || SRAMSize > 5)
@@ -3851,19 +3850,6 @@ void CMemory::ApplyROMFixes (void)
 
 	if (!Settings.DisableGameSpecificHacks)
 	{
-		// An infinite loop reads $4212 and waits V-blank end, whereas VIRQ is set V=0.
-		// If Snes9x succeeds to escape from the loop before jumping into the IRQ handler, the game goes further.
-		// If Snes9x jumps into the IRQ handler before escaping from the loop,
-		// Snes9x cannot escape from the loop permanently because the RTI is in the next V-blank.
-		if (match_na("Aero the AcroBat 2"))
-		{
-			Timings.IRQPendCount = 2;
-			if (log_cb) log_cb(RETRO_LOG_INFO, "IRQ count hack: %d\n", Timings.IRQPendCount);
-		}
-	}
-
-	if (!Settings.DisableGameSpecificHacks)
-	{
 		// smp transfer loop problem
 		if (match_na("LITTLE MAGIC") ||
 			  match_nc("Little Magic (Europe)") ||
@@ -3878,26 +3864,6 @@ void CMemory::ApplyROMFixes (void)
 			}
 		}
 	}
-
-	if (!Settings.DisableGameSpecificHacks)
-	{
-		// irq cli problem
-		if (match_nn("MARKOS MAGIC FOOTBALL"))
-		{
-			unsigned char patch1[] = {0x78,0x08,0xC2,0x30,0x48,0xDA,0x5A,0x8B,0x0B,0xE2,0x30};
-			unsigned char patch2[] = {0xC2,0x30,0x2B,0xAB,0x7A,0xFA,0x68,0x28,0x58,0x40};
-			unsigned char patch3[] = {0xC2,0x30,0x48,0xDA,0x5A,0x8B,0x0B,0xE2,0x30,0x4B,0xAB};
-			
-			if((memcmp(patch1,Memory.ROM+0x9a3,sizeof(patch1))==0) &&
-				 (memcmp(patch2,Memory.ROM+0x9b5,sizeof(patch2))==0))
-			{
-				// phk - plb
-				memcpy(ROM+0x9a3,patch3,sizeof(patch3));
-				Memory.ROM[0x9bc]=0x40;
-			}
-		}
-	}
-
 
 	//// SRAM initial value
 
