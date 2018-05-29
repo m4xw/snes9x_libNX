@@ -333,8 +333,7 @@ static void update_variables(void)
    if (reset_sfx)
       S9xResetSuperFX();
 
-  // hack: runahead cores (crop option)
-   //if (geometry_update)
+   if (geometry_update)
      update_geometry();
 }
 
@@ -657,8 +656,6 @@ bool retro_load_game(const struct retro_game_info *game)
    init_descriptors();
    memorydesc_c = 0;
 
-   update_variables();
-
    if(game->data == NULL && game->size == 0 && game->path != NULL)
       rom_loaded = Memory.LoadROM(game->path);
    else
@@ -700,6 +697,8 @@ bool retro_load_game(const struct retro_game_info *game)
 
    struct retro_memory_map map={ memorydesc+MAX_MAPS-memorydesc_c, memorydesc_c };
    if (rom_loaded) environ_cb(RETRO_ENVIRONMENT_SET_MEMORY_MAPS, &map);
+
+   update_variables();
 
    return rom_loaded;
 }
