@@ -47,6 +47,7 @@ bool overclock_cycles = false;
 bool reduce_sprite_flicker = false;
 bool randomize_memory = false;
 int one_c, slow_one_c, two_c;
+int freq = 10;
 
 retro_log_printf_t log_cb = NULL;
 static retro_video_refresh_t video_cb = NULL;
@@ -179,7 +180,7 @@ void retro_set_environment(retro_environment_t cb)
 
 extern void S9xResetSuperFX(void);
 
-void update_geometry()
+void update_geometry(void)
 {
   struct retro_system_av_info av_info;
   retro_get_system_av_info(&av_info);
@@ -197,9 +198,13 @@ static void update_variables(void)
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var))
    {
-      int freq = atoi(var.value);
-      Settings.SuperFXSpeedPerLine = 0.417f * ((freq + 0.5f) * 1e6);
-      reset_sfx = true;
+      int newval = atoi(var.value);
+      if (freq != newval)
+      {
+         freq = newval;
+         Settings.SuperFXSpeedPerLine = 0.417f * ((freq + 0.5f) * 1e6);
+         reset_sfx = true;
+      }
    }
 
    var.key = "snes9x_up_down_allowed";
