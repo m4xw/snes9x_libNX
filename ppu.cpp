@@ -277,7 +277,7 @@ static int CyclesUntilNext (int hc, int vc)
 	{
 		// It's still in this frame */
 		// Add number of lines
-		total += (vc - vpos) * Timings.H_Max;
+		total += (vc - vpos) * Timings.H_Max_Master;
 		// If line 240 is in there and we're odd, subtract a dot
 		if (vpos <= 240 && vc > 240 && Timings.InterlaceField & !IPPU.Interlace)
 			total -= ONE_DOT_CYCLE;
@@ -289,11 +289,11 @@ static int CyclesUntilNext (int hc, int vc)
 			return hc;
 		}
 
-		total += (Timings.V_Max - vpos) * Timings.H_Max;
+		total += (Timings.V_Max - vpos) * Timings.H_Max_Master;
 		if (vpos <= 240 && Timings.InterlaceField && !IPPU.Interlace)
 			total -= ONE_DOT_CYCLE;
 
-		total += (vc) * Timings.H_Max;
+		total += (vc) * Timings.H_Max_Master;
 		if (vc > 240 && !Timings.InterlaceField && !IPPU.Interlace)
 			total -= ONE_DOT_CYCLE;
 	}
@@ -306,24 +306,9 @@ static int CyclesUntilNext (int hc, int vc)
 void S9xUpdateIRQPositions (bool initial)
 {
 	PPU.HTimerPosition = PPU.IRQHBeamPos * ONE_DOT_CYCLE + Timings.IRQTriggerCycles;
-	if (Timings.H_Max == Timings.H_Max_Master)	// 1364
-	{
-		if (PPU.IRQHBeamPos > 322)
-			PPU.HTimerPosition += (ONE_DOT_CYCLE / 2);
-		if (PPU.IRQHBeamPos > 326)
-			PPU.HTimerPosition += (ONE_DOT_CYCLE / 2);
-	}
-
+	PPU.HTimerPosition += PPU.IRQHBeamPos > 322 ? (ONE_DOT_CYCLE / 2) : 0;
+	PPU.HTimerPosition += PPU.IRQHBeamPos > 326 ? (ONE_DOT_CYCLE / 2) : 0;
 	PPU.VTimerPosition = PPU.IRQVBeamPos;
-
-	if ((PPU.HTimerPosition >= Timings.H_Max) && (PPU.IRQHBeamPos < 340) && PPU.HTimerEnabled)
-	{
-		PPU.HTimerPosition -= Timings.H_Max;
-		PPU.VTimerPosition++;
-		// FIXME
-		if (PPU.VTimerPosition >= Timings.V_Max)
-			PPU.VTimerPosition = 0;
-	}
 
 	if (!PPU.HTimerEnabled && !PPU.VTimerEnabled)
 	{
@@ -331,20 +316,47 @@ void S9xUpdateIRQPositions (bool initial)
 	}
 	else if (PPU.HTimerEnabled && !PPU.VTimerEnabled)
 	{
+		int v_pos = CPU.V_Counter;
+
 		Timings.NextIRQTimer = PPU.HTimerPosition;
 		if (CPU.Cycles > Timings.NextIRQTimer - Timings.IRQTriggerCycles)
+		{
 			Timings.NextIRQTimer += Timings.H_Max;
+			v_pos++;
+		}
+
+		// Check for short dot scanline
+		if (v_pos == 240 && Timings.InterlaceField && !IPPU.Interlace)
+		{
+			Timings.NextIRQTimer -= PPU.IRQHBeamPos <= 322 ? ONE_DOT_CYCLE / 2 : 0;
+			Timings.NextIRQTimer -= PPU.IRQHBeamPos <= 326 ? ONE_DOT_CYCLE / 2 : 0;
+		}
 	}
 	else if (!PPU.HTimerEnabled && PPU.VTimerEnabled)
 	{
 		if (CPU.V_Counter == PPU.VTimerPosition && initial)
-			Timings.NextIRQTimer = Timings.IRQTriggerCycles;
+			Timings.NextIRQTimer = CPU.Cycles + Timings.IRQTriggerCycles;
 		else
 			Timings.NextIRQTimer = CyclesUntilNext (Timings.IRQTriggerCycles, PPU.VTimerPosition);
 	}
 	else
 	{
 		Timings.NextIRQTimer = CyclesUntilNext (PPU.HTimerPosition, PPU.VTimerPosition);
+
+		// Check for short dot scanline
+		int field = Timings.InterlaceField;
+
+		if (PPU.VTimerPosition < CPU.V_Counter ||
+		   (PPU.VTimerPosition == CPU.V_Counter && Timings.NextIRQTimer > Timings.H_Max))
+		{
+			field = !field;
+		}
+
+		if (PPU.VTimerPosition == 240 && field && !IPPU.Interlace)
+		{
+			Timings.NextIRQTimer -= PPU.IRQHBeamPos <= 322 ? ONE_DOT_CYCLE / 2 : 0;
+			Timings.NextIRQTimer -= PPU.IRQHBeamPos <= 326 ? ONE_DOT_CYCLE / 2 : 0;
+		}
 	}
 
 #ifdef DEBUGGER
@@ -1151,7 +1163,6 @@ void S9xSetPPU (uint8 Byte, uint16 Address)
 	}
 
 	Memory.FillRAM[Address] = Byte;
-	OpenBus = Byte;
 }
 
 uint8 S9xGetPPU (uint16 Address)
