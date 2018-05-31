@@ -519,8 +519,7 @@ void S9xDoHEventProcessing (void)
 
 				CPU.Flags |= SCAN_KEYS_FLAG;
 #ifdef LAGFIX
-				if (!(GFX.DoInterlace && GFX.InterlaceFrame == 0)) /* MIBR */
-                			finishedFrame = true;
+				finishedFrame = true;
 #endif
 				PPU.HDMA = 0;
 				// Bits 7 and 6 of $4212 are computed when read in S9xGetPPU.
