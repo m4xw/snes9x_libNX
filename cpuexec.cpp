@@ -202,13 +202,6 @@
 #include "missing.h"
 #endif
 
-//#define CPU_OPCODE_INSTRUMENTATION
-
-/* Pipe the output to :
- * | grep -B1 EXEC=NMI | grep -v EXEC=NMI | grep EXEC= | sort | uniq -c | sort -nr
- *
- */
-
 static inline void S9xReschedule (void);
 
 #ifdef LAGFIX
@@ -273,6 +266,17 @@ void S9xMainLoop (void)
 
 		if ((CPU.IRQLine || CPU.IRQExternal) && !CheckFlag(IRQ))
 			S9xOpcode_IRQ();
+
+		/* Change IRQ flag for instructions that set it only on last cycle */
+		if (Timings.IRQFlagChanging)
+		{
+			if (Timings.IRQFlagChanging == IRQ_CLEAR_FLAG)
+				ClearIRQ();
+			else if (Timings.IRQFlagChanging == IRQ_SET_FLAG)
+				SetIRQ();
+			Timings.IRQFlagChanging = IRQ_NONE;
+		}
+
 
 	#ifdef DEBUGGER
 		if ((CPU.Flags & BREAK_FLAG) && !(CPU.Flags & SINGLE_STEP_FLAG))
