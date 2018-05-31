@@ -1635,19 +1635,25 @@ static void OpF8 (void)
 // CLI
 static void Op58 (void)
 {
-	ClearIRQ();
 	AddCycles(ONE_CYCLE);
 
 #ifndef SA1_OPCODES
-        CPU.IRQLine = FALSE;
+	Timings.IRQFlagChanging = IRQ_CLEAR_FLAG;
+#else
+	ClearIRQ();
 #endif
 }
 
 // SEI
 static void Op78 (void)
 {
-	SetIRQ();
 	AddCycles(ONE_CYCLE);
+
+#ifndef SA1_OPCODES
+	Timings.IRQFlagChanging = IRQ_SET_FLAG;
+#else
+	SetIRQ();
+#endif
 }
 
 // CLV
