@@ -177,7 +177,7 @@ void retro_set_environment(retro_environment_t cb)
    static const struct retro_controller_info ports[] = {
       { port_1, 3 },
       { port_2, 6 },
-      { 0 },
+      { 0, 0 },
    };
 
    environ_cb(RETRO_ENVIRONMENT_SET_CONTROLLER_INFO, (void*)ports);
@@ -667,7 +667,7 @@ static void init_descriptors(void)
       { 4, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT,   "Select" },
       { 4, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START,    "Start" },
 
-      { 0 },
+      { 0, 0, 0, 0, "" },
    };
 
    environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, desc);
