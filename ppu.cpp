@@ -284,7 +284,7 @@ static int CyclesUntilNext (int hc, int vc)
 	}
 	else
 	{
-		if (vc == vpos && hc > CPU.Cycles)
+		if (vc == vpos && (hc > CPU.Cycles))
 		{
 			return hc;
 		}
@@ -306,6 +306,7 @@ static int CyclesUntilNext (int hc, int vc)
 void S9xUpdateIRQPositions (bool initial)
 {
 	PPU.HTimerPosition = PPU.IRQHBeamPos * ONE_DOT_CYCLE + Timings.IRQTriggerCycles;
+	PPU.HTimerPosition -= PPU.IRQHBeamPos ? 0 : ONE_DOT_CYCLE;
 	PPU.HTimerPosition += PPU.IRQHBeamPos > 322 ? (ONE_DOT_CYCLE / 2) : 0;
 	PPU.HTimerPosition += PPU.IRQHBeamPos > 326 ? (ONE_DOT_CYCLE / 2) : 0;
 	PPU.VTimerPosition = PPU.IRQVBeamPos;
@@ -360,7 +361,7 @@ void S9xUpdateIRQPositions (bool initial)
 	}
 
 #ifdef DEBUGGER
-	S9xTraceFormattedMessage("--- IRQ Timer HC:%d VC:%d %s %d cycles HTimer:%d Pos:%04d->%04d  VTimer:%d Pos:%03d->%03d", CPU.Cycles, CPU.V_Counter, initial ? "set" : "recur",
+	S9xTraceFormattedMessage("--- IRQ Timer HC:%d VC:%d set %d cycles HTimer:%d Pos:%04d->%04d  VTimer:%d Pos:%03d->%03d", CPU.Cycles, CPU.V_Counter,
 		Timings.NextIRQTimer, PPU.HTimerEnabled, PPU.IRQHBeamPos, PPU.HTimerPosition, PPU.VTimerEnabled, PPU.IRQVBeamPos, PPU.VTimerPosition);
 #endif
 }
@@ -1172,7 +1173,7 @@ uint8 S9xGetPPU (uint16 Address)
 		return (S9xMSU1ReadPort(Address & 7));
 	else
 	if (Address < 0x2100)
-		return (PPU.OpenBus1);
+		return (OpenBus);
 
 	if (CPU.InDMAorHDMA)
 	{
@@ -1417,12 +1418,12 @@ uint8 S9xGetPPU (uint16 Address)
 			case 0x21c2:
 				if (Model->_5C77 == 2)
 					return (0x20);
-				return (PPU.OpenBus2);
+				return (OpenBus);
 
 			case 0x21c3:
 				if (Model->_5C77 == 2)
 					return (0);
-				return (PPU.OpenBus2);
+				return (OpenBus);
 
 			default:
 				return (OpenBus);
@@ -1546,15 +1547,20 @@ void S9xSetCPU (uint8 Byte, uint16 Address)
 			case 0x4200: // NMITIMEN
 				#ifdef DEBUGGER
 				if (Settings.TraceHCEvent)
-				    S9xTraceFormattedMessage("Write to 0x4200. Byte is %2x was %2x\n", Byte, Memory.FillRAM[Address]);
+					S9xTraceFormattedMessage("Write to 0x4200. Byte is %2x was %2x\n", Byte, Memory.FillRAM[Address]);
 				#endif
+
+				if (Byte == Memory.FillRAM[0x4200])
+					break;
+
 				if (Byte & 0x20)
 				{
 					PPU.VTimerEnabled = TRUE;
-				#ifdef DEBUGGER
+
+					#ifdef DEBUGGER
 					missing.virq = 1;
 					missing.virq_pos = PPU.IRQVBeamPos;
-				#endif
+					#endif
 				}
 				else
 					PPU.VTimerEnabled = FALSE;
@@ -1562,10 +1568,11 @@ void S9xSetCPU (uint8 Byte, uint16 Address)
 				if (Byte & 0x10)
 				{
 					PPU.HTimerEnabled = TRUE;
-				#ifdef DEBUGGER
+
+					#ifdef DEBUGGER
 					missing.hirq = 1;
 					missing.hirq_pos = PPU.IRQHBeamPos;
-				#endif
+					#endif
 				}
 				else
 					PPU.HTimerEnabled = FALSE;
@@ -1582,23 +1589,21 @@ void S9xSetCPU (uint8 Byte, uint16 Address)
 				if ((Byte & 0x80) && !(Memory.FillRAM[0x4200] & 0x80) &&
 					(CPU.V_Counter >= PPU.ScreenHeight + FIRST_VISIBLE_LINE) && (Memory.FillRAM[0x4210] & 0x80))
 				{
-
 					// FIXME: triggered at HC+=6, checked just before the final CPU cycle,
 					// then, when to call S9xOpcode_NMI()?
 					CPU.NMIPending = TRUE;
 					Timings.NMITriggerPos = CPU.Cycles + 6 + 6;
 
-#ifdef DEBUGGER
-if (Settings.TraceHCEvent)
-    S9xTraceFormattedMessage("NMI Triggered on low-to-high occurring at next HC=%d\n", Timings.NMITriggerPos);
-#endif
-
+					#ifdef DEBUGGER
+					if (Settings.TraceHCEvent)
+						S9xTraceFormattedMessage("NMI Triggered on low-to-high occurring at next HC=%d\n", Timings.NMITriggerPos);
+					#endif
 				}
 
-                #ifdef DEBUGGER
-	                S9xTraceFormattedMessage("--- IRQ Timer Enable HTimer:%d Pos:%04d  VTimer:%d Pos:%03d",
-		                PPU.HTimerEnabled, PPU.HTimerPosition, PPU.VTimerEnabled, PPU.VTimerPosition);
-                #endif
+				#ifdef DEBUGGER
+				S9xTraceFormattedMessage("--- IRQ Timer Enable HTimer:%d Pos:%04d  VTimer:%d Pos:%03d",
+				PPU.HTimerEnabled, PPU.HTimerPosition, PPU.VTimerEnabled, PPU.VTimerPosition);
+				#endif
 
 				break;
 
