@@ -261,8 +261,8 @@ const char * S9xGoldFingerToRaw (const char *code, uint32 &address, bool8 &sram,
 	if (sscanf(tmp, "%x", &address) != 1)
 		return ("Invalid Gold Finger code.");
 
-	//Correct GoldFinger Address
-	address=(address&0x7FFF)|((address&0x7F8000)<<1)|0x8000;
+	// Correct GoldFinger Address
+	address = (address & 0x7FFF) | ((address & 0x7F8000) << 1) | 0x8000;
 
 	for (i = 0; i < 3; i++)
 	{

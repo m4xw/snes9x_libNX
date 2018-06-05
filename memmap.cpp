@@ -2549,7 +2549,7 @@ void CMemory::InitROM (void)
 	}
 
 	// MSU1
-	Settings.MSU1 = MsuRomExists();
+	Settings.MSU1 = S9xMSU1ROMExists();
 
 	//// Map memory and calculate checksum
 
@@ -2999,7 +2999,7 @@ void CMemory::map_LoROMSRAM (void)
 {
         uint32 hi;
 
-        // libretro fork: Deae Tonosama - Appare Ichiban (Japan) copier protection
+        // libretro: Deae Tonosama - Appare Ichiban (Japan) copier protection
         if( SRAMSize == 0 ) return;
 
 

@@ -214,6 +214,17 @@ void S9xMainLoop (void)
 	do
 	{
 #endif
+
+	#define CHECK_FOR_IRQ_CHANGE() \
+	if (Timings.IRQFlagChanging) \
+	{ \
+		if (Timings.IRQFlagChanging == IRQ_CLEAR_FLAG) \
+			ClearIRQ(); \
+		else if (Timings.IRQFlagChanging == IRQ_SET_FLAG) \
+			SetIRQ(); \
+		Timings.IRQFlagChanging = IRQ_NONE; \
+	}
+
 	for (;;)
 	{
 		if (CPU.NMIPending)
@@ -235,6 +246,7 @@ void S9xMainLoop (void)
 						S9xDoHEventProcessing();
 				}
 
+				CHECK_FOR_IRQ_CHANGE();
 				S9xOpcode_NMI();
 			}
 		}
@@ -249,34 +261,29 @@ void S9xMainLoop (void)
 				while (CPU.Cycles >= CPU.NextEvent)
 					S9xDoHEventProcessing();
 			}
-
 			CPU.IRQTransition = FALSE;
 			CPU.IRQLine = TRUE;
 		}
 
-		if ((CPU.Cycles >= Timings.NextIRQTimer) && !CPU.IRQLine && !CPU.IRQTransition)
+		if (CPU.Cycles >= Timings.NextIRQTimer)
 		{
-			S9xUpdateIRQPositions(false);
-
-		#ifdef DEBUGGER
+			#ifdef DEBUGGER
 			S9xTraceMessage ("Timer triggered\n");
-		#endif
+			#endif
+
+			S9xUpdateIRQPositions(false);
 			CPU.IRQTransition = TRUE;
 		}
 
 		if ((CPU.IRQLine || CPU.IRQExternal) && !CheckFlag(IRQ))
-			S9xOpcode_IRQ();
-
-		/* Change IRQ flag for instructions that set it only on last cycle */
-		if (Timings.IRQFlagChanging)
 		{
-			if (Timings.IRQFlagChanging == IRQ_CLEAR_FLAG)
-				ClearIRQ();
-			else if (Timings.IRQFlagChanging == IRQ_SET_FLAG)
-				SetIRQ();
-			Timings.IRQFlagChanging = IRQ_NONE;
+			/* The flag pushed onto the stack is the new value */
+			CHECK_FOR_IRQ_CHANGE();
+			S9xOpcode_IRQ();
 		}
 
+		/* Change IRQ flag for instructions that set it only on last cycle */
+		CHECK_FOR_IRQ_CHANGE();
 
 	#ifdef DEBUGGER
 		if ((CPU.Flags & BREAK_FLAG) && !(CPU.Flags & SINGLE_STEP_FLAG))
