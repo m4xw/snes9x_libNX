@@ -4,17 +4,16 @@ cache:
   paths:
   - snes9x2010nx/
 
-before_script:
-  - dkp-pacman -S --noconfirm devkitARM
-  - export DEVKITPRO=/opt/devkitpro
-  - export DEVKITARM=/opt/devkitpro/devkitARM
-
 stages:
   - build
   - package
 
 build:
   stage: build
+  before_script:
+    - dkp-pacman -S --noconfirm devkitARM
+    - export DEVKITPRO=/opt/devkitpro
+    - export DEVKITARM=/opt/devkitpro/devkitARM
   script:
     - rm -rf snes9x2010nx
     - mkdir snes9x2010nx
