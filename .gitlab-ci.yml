@@ -1,0 +1,43 @@
+image: devkitpro/devkita64:latest
+
+cache:
+  paths:
+  - snes9x/
+
+stages:
+  - build
+  - package
+
+build:
+  stage: build
+  before_script:
+    - dkp-pacman -S --noconfirm devkitARM
+    - export DEVKITPRO=/opt/devkitpro
+    - export DEVKITARM=/opt/devkitpro/devkitARM
+  script:
+    - rm -rf snes9x
+    - mkdir snes9x
+    - git clone https://git.m4xw.net/Switch/RetroArch/RetroArch.git --depth=1
+    - cd libretro
+    - make platform=switch
+    - cp snes9x_libretro_switch.a ../RetroArch/libretro_switch.a 
+    - cd ../RetroArch/ 
+    - mkdir romfs
+    - make -f Makefile.switch
+    - cp retroarch_switch.nro ../snes9x/snes9x.nro
+    - cp retroarch.cfg ../snes9x/retroarch.cfg
+    - cp NintendoSNES.cfg ../snes9x/NintendoSNES.cfg
+    - cp NintendoSNES.png ../snes9x/NintendoSNES.png
+
+package:
+  stage: package
+  script:
+    - echo 'creating zip'
+  when: on_success
+  artifacts:
+    name: snes9x
+    paths:
+    - snes9x/
+  only:
+  - master
+
