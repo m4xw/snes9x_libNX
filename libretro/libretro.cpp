@@ -22,7 +22,7 @@
 #include <sys/types.h>
 #include <fcntl.h>
 
-#define RETRO_DEVICE_JOYPAD_MULTITAP ((1 << 8) | RETRO_DEVICE_JOYPAD)
+#define RETRO_DEVICE_JOYPAD_MULTITAP ((2 << 8) | RETRO_DEVICE_JOYPAD)
 #define RETRO_DEVICE_LIGHTGUN_SUPER_SCOPE ((1 << 8) | RETRO_DEVICE_LIGHTGUN)
 #define RETRO_DEVICE_LIGHTGUN_JUSTIFIER ((2 << 8) | RETRO_DEVICE_LIGHTGUN)
 #define RETRO_DEVICE_LIGHTGUN_JUSTIFIERS ((3 << 8) | RETRO_DEVICE_LIGHTGUN)
@@ -160,12 +160,14 @@ void retro_set_environment(retro_environment_t cb)
    environ_cb(RETRO_ENVIRONMENT_SET_VARIABLES, variables);
 
    static const struct retro_controller_description port_1[] = {
+      { "None", RETRO_DEVICE_NONE },
       { "SNES Joypad", RETRO_DEVICE_JOYPAD },
       { "SNES Mouse", RETRO_DEVICE_MOUSE },
       { "Multitap", RETRO_DEVICE_JOYPAD_MULTITAP },
    };
 
    static const struct retro_controller_description port_2[] = {
+      { "None", RETRO_DEVICE_NONE },
       { "SNES Joypad", RETRO_DEVICE_JOYPAD },
       { "SNES Mouse", RETRO_DEVICE_MOUSE },
       { "Multitap", RETRO_DEVICE_JOYPAD_MULTITAP },
@@ -175,8 +177,8 @@ void retro_set_environment(retro_environment_t cb)
    };
 
    static const struct retro_controller_info ports[] = {
-      { port_1, 3 },
-      { port_2, 6 },
+      { port_1, 4 },
+      { port_2, 7 },
       { 0, 0 },
    };
 
@@ -460,6 +462,10 @@ void retro_set_controller_port_device(unsigned port, unsigned device)
       int offset = snes_devices[0] == RETRO_DEVICE_JOYPAD_MULTITAP ? 4 : 1;
       switch (device)
       {
+         case RETRO_DEVICE_NONE:
+            S9xSetController(port, CTL_NONE, port, 0, 0, 0);
+            snes_devices[port] = RETRO_DEVICE_NONE;
+			break;
          case RETRO_DEVICE_JOYPAD:
             S9xSetController(port, CTL_JOYPAD, port * offset, 0, 0, 0);
             snes_devices[port] = RETRO_DEVICE_JOYPAD;
@@ -1018,6 +1024,9 @@ static void report_buttons()
    {
       switch (snes_devices[port])
       {
+         case RETRO_DEVICE_NONE:
+			break;
+			
          case RETRO_DEVICE_JOYPAD:
             for (int i = BTN_FIRST; i <= BTN_LAST; i++)
                S9xReportButton(MAKE_BUTTON(port * offset + 1, i), input_state_cb(port * offset, RETRO_DEVICE_JOYPAD, 0, i));
