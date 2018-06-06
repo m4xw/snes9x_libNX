@@ -217,6 +217,10 @@ static inline bool8 addCyclesInDMA (uint8 dma_channel)
 	// Add 8 cycles per byte, sync APU, and do HC related events.
 	// If HDMA was done in S9xDoHEventProcessing(), check if it used the same channel as DMA.
 	ADD_CYCLES(SLOW_ONE_CYCLE);
+
+	extern int dma_kludge;
+	if(dma_kludge && overclock_cycles == 0 && CPU.WhichEvent==HC_HCOUNTER_MAX_EVENT) ADD_CYCLES(-1);
+
 	while (CPU.Cycles >= CPU.NextEvent)
 		S9xDoHEventProcessing();
 

@@ -222,6 +222,7 @@
 
 #include "libretro/libretro.h"
 extern retro_log_printf_t log_cb;
+int dma_kludge;
 
 void S9xAppendMapping(struct retro_memory_descriptor *desc);
 
@@ -3863,6 +3864,15 @@ void CMemory::ApplyROMFixes (void)
 				Memory.ROM[0xf9b6]=0x10;
 			}
 		}
+	}
+
+	if (!Settings.DisableGameSpecificHacks)
+	{
+		dma_kludge = 0;
+
+		// possible timing problem
+		if (match_na("K A T ' S R U N"))
+			dma_kludge = 1;
 	}
 
 	//// SRAM initial value
