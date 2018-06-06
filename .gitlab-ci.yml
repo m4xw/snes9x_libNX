@@ -17,17 +17,17 @@ build:
   script:
     - rm -rf snes9x
     - mkdir snes9x
-    - git clone https://git.m4xw.net/Switch/RetroArch/RetroArch.git --depth=1
-    - cd libretro
-    - make platform=switch
-    - cp snes9x_libretro_switch.a ../RetroArch/libretro_switch.a 
-    - cd ../RetroArch/ 
+    - cp assets/overlay.cfg snes9x/overlay.cfg
+    - cp assets/overlay.png snes9x/overlay.png
+    - make platform=switch -j20
+    - git clone -b master https://git.m4xw.net/Switch/RetroArch/RetroArch.git --depth=1
+    - cp snes9x_libretro_switch.a RetroArch/libretro_switch.a 
+    - cp assets/icon.jpg RetroArch/icon.jpg
+    - cd RetroArch/ 
     - mkdir romfs
-    - make -f Makefile.switch
+    - APP_TITLE="SNES9x libnx" make -f Makefile.switch -j20
     - cp retroarch_switch.nro ../snes9x/snes9x.nro
     - cp retroarch.cfg ../snes9x/retroarch.cfg
-    - cp NintendoSNES.cfg ../snes9x/NintendoSNES.cfg
-    - cp NintendoSNES.png ../snes9x/NintendoSNES.png
 
 package:
   stage: package
@@ -40,4 +40,5 @@ package:
     - snes9x/
   only:
   - master
+
 
