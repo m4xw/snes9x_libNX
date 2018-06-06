@@ -1,4 +1,4 @@
-image: devkitpro/devkita64:latest
+image: starcarr/libnx:latest
 
 variables:
   PACKAGE_FOLDER: "snes9x"
