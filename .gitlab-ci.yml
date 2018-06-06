@@ -7,6 +7,7 @@ variables:
   APP_TITLE: "SNES9X libnx"
 
 cache:
+  key: ${CI_COMMIT_REF_SLUG}
   paths:
   - $PACKAGE_FOLDER
 
@@ -16,10 +17,6 @@ stages:
 
 build:
   stage: build
-  before_script:
-    - dkp-pacman -S --noconfirm devkitARM
-    - export DEVKITPRO=/opt/devkitpro
-    - export DEVKITARM=/opt/devkitpro/devkitARM
   script:
     - rm -rf $PACKAGE_FOLDER
     - mkdir $PACKAGE_FOLDER
