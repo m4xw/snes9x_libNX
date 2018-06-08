@@ -377,7 +377,7 @@ struct SSettings
 	bool8	TraceDSP;
 	bool8	TraceHCEvent;
 	bool8	TraceSMP;
-	
+
 	bool8	SuperFX;
 	uint8	DSP;
 	bool8	SA1;
@@ -423,7 +423,6 @@ struct SSettings
 
 	bool8	SupportHiRes;
 	bool8	Transparency;
-	float	SuperFXSpeedPerLine;
 	uint8	BG_Forced;
 	bool8	DisableGraphicWindows;
 
@@ -465,6 +464,7 @@ struct SSettings
 	bool8	UpAndDown;
 
 	bool8	OpenGLEnable;
+	uint32	SuperFXClockMultiplier;
 
 	bool8	FastSavestates;
 	bool8	HardDisableAudio;
