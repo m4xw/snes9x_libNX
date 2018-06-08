@@ -1274,14 +1274,6 @@ static bool8 is_GNEXT_Add_On (const uint8 *data, uint32 size)
 		return (FALSE);
 }
 
-static bool8 MsuRomExists (void)
-{
-	struct stat buf;
-   const char *path = S9xGetFilename(".msu", ROMFILENAME_DIR);
-
-	return (stat(path, &buf) == 0);
-}
-
 int CMemory::ScoreHiROM (bool8 skip_header, int32 romoff)
 {
 	uint8	*buf = ROM + 0xff00 + romoff + (skip_header ? 0x200 : 0);
@@ -2043,13 +2035,12 @@ bool8 CMemory::LoadGNEXT ()
 bool8 CMemory::LoadSRTC (void)
 {
 	FILE	*fp;
-	size_t	ignore;
 
 	fp = fopen(S9xGetFilename(".rtc", SRAM_DIR), "rb");
 	if (!fp)
 		return (FALSE);
 
-	ignore = fread(RTCData.reg, 1, 20, fp);
+	fread(RTCData.reg, 1, 20, fp);
 	fclose(fp);
 
 	return (TRUE);
@@ -2058,13 +2049,12 @@ bool8 CMemory::LoadSRTC (void)
 bool8 CMemory::SaveSRTC (void)
 {
 	FILE	*fp;
-	size_t	ignore;
 
 	fp = fopen(S9xGetFilename(".rtc", SRAM_DIR), "wb");
 	if (!fp)
 		return (FALSE);
 
-	ignore = fwrite(RTCData.reg, 1, 20, fp);
+	fwrite(RTCData.reg, 1, 20, fp);
 	fclose(fp);
 
 	return (TRUE);
@@ -2191,8 +2181,7 @@ bool8 CMemory::SaveSRAM (const char *filename)
 		file = fopen(name, "wb");
 		if (file)
 		{
-			size_t	ignore;
-			ignore = fwrite((char *) Multi.sramB, size, 1, file);
+			fwrite((char *) Multi.sramB, size, 1, file);
 			fclose(file);
 		}
 
@@ -2208,8 +2197,7 @@ bool8 CMemory::SaveSRAM (const char *filename)
 		file = fopen(sramName, "wb");
 		if (file)
 		{
-			size_t	ignore;
-			ignore = fwrite((char *) SRAM, size, 1, file);
+			fwrite((char *) SRAM, size, 1, file);
 			fclose(file);
 
 			if (Settings.SRTC || Settings.SPC7110RTC)
@@ -2800,7 +2788,7 @@ void CMemory::map_lorom (uint32 bank_s, uint32 bank_e, uint32 addr_s, uint32 add
 
 	if (auto_export_map)
 	{
-		struct retro_memory_descriptor desc = {0};
+		struct retro_memory_descriptor desc = {};
 		desc.flags=RETRO_MEMDESC_CONST;
 		desc.ptr=ROM;
 		desc.start=bank_s<<16 | addr_s;
@@ -2829,7 +2817,7 @@ void CMemory::map_hirom (uint32 bank_s, uint32 bank_e, uint32 addr_s, uint32 add
 
 	if (auto_export_map)
 	{
-		struct retro_memory_descriptor desc = {0};
+		struct retro_memory_descriptor desc = {};
 		desc.flags=RETRO_MEMDESC_CONST;
 		desc.ptr=ROM;
 		desc.offset=map_mirror(size, addr_s);
@@ -2858,7 +2846,7 @@ void CMemory::map_lorom_offset (uint32 bank_s, uint32 bank_e, uint32 addr_s, uin
 
 	if (auto_export_map)
 	{
-		struct retro_memory_descriptor desc = {0};
+		struct retro_memory_descriptor desc = {};
 		desc.flags=RETRO_MEMDESC_CONST;
 		desc.ptr=ROM;
 		desc.offset=offset;
@@ -2888,7 +2876,7 @@ void CMemory::map_hirom_offset (uint32 bank_s, uint32 bank_e, uint32 addr_s, uin
 
 	if (auto_export_map)
 	{
-		struct retro_memory_descriptor desc = {0};
+		struct retro_memory_descriptor desc = {};
 		desc.flags=RETRO_MEMDESC_CONST;
 		desc.ptr=ROM;
 		desc.offset=map_mirror(size, offset + addr_s);
@@ -2915,7 +2903,7 @@ void CMemory::map_space (uint32 bank_s, uint32 bank_e, uint32 addr_s, uint32 add
 	}
 	if (auto_export_map)
 	{
-		struct retro_memory_descriptor desc = {0};
+		struct retro_memory_descriptor desc = {};
 		desc.ptr=data;
 		desc.start=bank_s<<16 | addr_s;
 		desc.select=(bank_s<<16 | addr_s) ^ (bank_e<<16 | addr_e) ^ 0xFFFFFF;
@@ -2945,7 +2933,7 @@ void CMemory::map_index (uint32 bank_s, uint32 bank_e, uint32 addr_s, uint32 add
 
 	if (auto_export_map)
 	{
-		struct retro_memory_descriptor desc = {0};
+		struct retro_memory_descriptor desc = {};
 		desc.start=bank_s<<16 | addr_s;
 		desc.select=(bank_s<<16 | addr_s) ^ (bank_e<<16 | addr_e) ^ 0xFFFFFF;
 		if (type==MAP_LOROM_SRAM || type==MAP_SA1RAM)

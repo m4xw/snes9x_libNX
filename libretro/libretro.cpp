@@ -44,11 +44,12 @@
 
 char g_rom_dir[1024];
 char g_basename[1024];
+
+bool hires_blend = false;
 bool overclock_cycles = false;
 bool reduce_sprite_flicker = false;
 bool randomize_memory = false;
 int one_c, slow_one_c, two_c;
-int freq = 10;
 int macsrifle_adjust_x, macsrifle_adjust_y;
 
 retro_log_printf_t log_cb = NULL;
@@ -57,6 +58,9 @@ static retro_audio_sample_t audio_cb = NULL;
 static retro_audio_sample_batch_t audio_batch_cb = NULL;
 static retro_input_poll_t poll_cb = NULL;
 static retro_input_state_t input_state_cb = NULL;
+
+static bool lufia2_credits_hack = false;
+static uint16 *gfx_blend;
 
 static void extract_basename(char *buf, const char *path, size_t size)
 {
@@ -130,7 +134,8 @@ void retro_set_environment(retro_environment_t cb)
       // Changing "Show layer 1" is fine, but don't change "layer_1"/etc or the possible values ("Yes|No").
       // Adding more variables and rearranging them is safe.
       { "snes9x_up_down_allowed", "Allow Opposing Directions; disabled|enabled" },
-      { "snes9x_overclock", "SuperFX Frequency; 10MHz|20MHz|40MHz|60MHz|80MHz|100MHz" },
+      { "snes9x_hires_blend", "Hires Blending; disabled|enabled" },
+      { "snes9x_overclock_superfx", "SuperFX Overclocking; 100%|150%|200%|250%|300%|350%|400%|450%|500%|50%" },
       { "snes9x_overclock_cycles", "Reduce Slowdown (Hack, Unsafe); disabled|compatible|max" },
       { "snes9x_reduce_sprite_flicker", "Reduce Flickering (Hack, Unsafe); disabled|enabled" },
       { "snes9x_randomize_memory", "Randomize Memory (Unsafe); disabled|enabled" },
@@ -141,7 +146,7 @@ void retro_set_environment(retro_environment_t cb)
       { "snes9x_layer_5", "Show sprite layer; enabled|disabled" },
       { "snes9x_gfx_clip", "Enable graphic clip windows; enabled|disabled" },
       { "snes9x_gfx_transp", "Enable transparency effects; enabled|disabled" },
-	  { "snes9x_gfx_hires", "Enable hires mode; enabled|disabled" },
+      { "snes9x_gfx_hires", "Enable hires mode; enabled|disabled" },
       { "snes9x_sndchan_1", "Enable sound channel 1; enabled|disabled" },
       { "snes9x_sndchan_2", "Enable sound channel 2; enabled|disabled" },
       { "snes9x_sndchan_3", "Enable sound channel 3; enabled|disabled" },
@@ -196,22 +201,26 @@ void update_geometry(void)
 
 static void update_variables(void)
 {
-   bool reset_sfx = false;
    bool geometry_update = false;
    char key[256];
    struct retro_variable var;
-   var.key = "snes9x_overclock";
+
+   var.key = "snes9x_hires_blend";
+   var.value = NULL;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var))
+      hires_blend = !strcmp(var.value, "disabled") ? false : true;
+   else
+      hires_blend = false;
+
+   var.key = "snes9x_overclock_superfx";
    var.value = NULL;
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var))
    {
-      int newval = atoi(var.value);
-      if (freq != newval)
-      {
-         freq = newval;
-         Settings.SuperFXSpeedPerLine = 0.417f * ((freq + 0.5f) * 1e6);
-         reset_sfx = true;
-      }
+      int newval;
+      if(sscanf(var.value,"%d%%",&newval))
+         Settings.SuperFXClockMultiplier = newval;
    }
 
    var.key = "snes9x_up_down_allowed";
@@ -228,46 +237,46 @@ static void update_variables(void)
    var.value = NULL;
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      if (strcmp(var.value, "compatible") == 0)
       {
-        if (strcmp(var.value, "compatible") == 0)
-        {
-           overclock_cycles = true;
-           one_c = 4;
-           slow_one_c = 5;
-           two_c = 6;
-        }
-        else if (strcmp(var.value, "max") == 0)
-        {
-           overclock_cycles = true;
-           one_c = 3;
-           slow_one_c = 3;
-           two_c = 3;
-        }
-        else
-          overclock_cycles = false;
+         overclock_cycles = true;
+         one_c = 4;
+         slow_one_c = 5;
+         two_c = 6;
       }
+      else if (strcmp(var.value, "max") == 0)
+      {
+         overclock_cycles = true;
+         one_c = 3;
+         slow_one_c = 3;
+         two_c = 3;
+      }
+      else
+         overclock_cycles = false;
+   }
 
    var.key = "snes9x_reduce_sprite_flicker";
    var.value = NULL;
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-      {
-        if (strcmp(var.value, "enabled") == 0)
-          reduce_sprite_flicker = true;
-        else
-          reduce_sprite_flicker = false;
-      }
+   {
+      if (strcmp(var.value, "enabled") == 0)
+         reduce_sprite_flicker = true;
+      else
+         reduce_sprite_flicker = false;
+   }
 
    var.key = "snes9x_randomize_memory";
    var.value = NULL;
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-      {
-        if (strcmp(var.value, "enabled") == 0)
-          randomize_memory = true;
-        else
-          randomize_memory = false;
-      }
+   {
+      if (strcmp(var.value, "enabled") == 0)
+         randomize_memory = true;
+      else
+         randomize_memory = false;
+   }
 
    int disabled_channels=0;
    strcpy(key, "snes9x_sndchan_x");
@@ -280,7 +289,6 @@ static void update_variables(void)
          disabled_channels|=1<<i;
    }
    S9xSetSoundControl(disabled_channels^0xFF);
-
 
    int disabled_layers=0;
    strcpy(key, "snes9x_layer_x");
@@ -310,17 +318,17 @@ static void update_variables(void)
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
    {
-     unsigned newval = 0;
-     if (strcmp(var.value, "enabled") == 0)
-       newval = 1;
-     else if (strcmp(var.value, "disabled") == 0)
-       newval = 2;
+      unsigned newval = 0;
+      if (strcmp(var.value, "enabled") == 0)
+         newval = 1;
+      else if (strcmp(var.value, "disabled") == 0)
+         newval = 2;
 
-     if (newval != crop_overscan_mode)
-     {
-       crop_overscan_mode = newval;
-       geometry_update = true;
-     }
+      if (newval != crop_overscan_mode)
+      {
+         crop_overscan_mode = newval;
+         geometry_update = true;
+      }
    }
 
    var.key = "snes9x_aspect";
@@ -329,34 +337,31 @@ static void update_variables(void)
    {
       unsigned newval = 0;
       if (strcmp(var.value, "ntsc") == 0)
-        newval = 1;
+         newval = 1;
       else if (strcmp(var.value, "pal") == 0)
-        newval = 2;
+         newval = 2;
       else if (strcmp(var.value, "4:3") == 0)
-        newval = 3;
+         newval = 3;
 
       if (newval != aspect_ratio_mode)
       {
-        aspect_ratio_mode = newval;
-        geometry_update = true;
+         aspect_ratio_mode = newval;
+         geometry_update = true;
       }
    }
 
-	 var.key="snes9x_macsrifle_adjust_x";
-	 var.value=NULL;
-	 if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-			macsrifle_adjust_x = atoi(var.value);
+   var.key="snes9x_macsrifle_adjust_x";
+   var.value=NULL;
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+      macsrifle_adjust_x = atoi(var.value);
 
-	 var.key="snes9x_macsrifle_adjust_y";
-	 var.value=NULL;
-	 if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
-			macsrifle_adjust_y = atoi(var.value);
-
-   if (reset_sfx)
-      S9xResetSuperFX();
+   var.key="snes9x_macsrifle_adjust_y";
+   var.value=NULL;
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+      macsrifle_adjust_y = atoi(var.value);
 
    if (geometry_update)
-     update_geometry();
+      update_geometry();
 }
 
 static void S9xAudioCallback(void*)
@@ -369,78 +374,78 @@ static void S9xAudioCallback(void*)
    size_t avail = S9xGetSampleCount();
    while (avail >= BUFFER_SIZE)
    {
-	   //this loop will never be entered, but handle oversized sample counts just in case
-	   S9xMixSamples((uint8*)audio_buf, BUFFER_SIZE);
-	   audio_batch_cb(audio_buf, BUFFER_SIZE >> 1);
+      //this loop will never be entered, but handle oversized sample counts just in case
+      S9xMixSamples((uint8*)audio_buf, BUFFER_SIZE);
+      audio_batch_cb(audio_buf, BUFFER_SIZE >> 1);
 
-	   avail -= BUFFER_SIZE;
+      avail -= BUFFER_SIZE;
    }
    if (avail > 0)
    {
-	   S9xMixSamples((uint8*)audio_buf, avail);
-	   audio_batch_cb(audio_buf, avail >> 1);
+      S9xMixSamples((uint8*)audio_buf, avail);
+      audio_batch_cb(audio_buf, avail >> 1);
    }
 }
 
 void retro_get_system_info(struct retro_system_info *info)
 {
-    memset(info,0,sizeof(retro_system_info));
+   memset(info,0,sizeof(retro_system_info));
 
-    info->library_name = "Snes9x";
+   info->library_name = "Snes9x";
 #ifndef GIT_VERSION
 #define GIT_VERSION ""
 #endif
-    info->library_version = VERSION GIT_VERSION;
-    info->valid_extensions = "smc|sfc|swc|fig";
-    info->need_fullpath = false;
-    info->block_extract = false;
+   info->library_version = VERSION GIT_VERSION;
+   info->valid_extensions = "smc|sfc|swc|fig";
+   info->need_fullpath = false;
+   info->block_extract = false;
 }
 
 float get_aspect_ratio(unsigned width, unsigned height)
 {
-  if (aspect_ratio_mode == 3) // 4:3
-  {
-    return SNES_4_3;
-  }
+   if (aspect_ratio_mode == 3) // 4:3
+   {
+     return SNES_4_3;
+   }
 
-  float sample_frequency_ntsc = 135000000.0 / 11.0;
-  float sample_frequency_pal = 14750000.0;
+   float sample_frequency_ntsc = 135000000.0 / 11.0;
+   float sample_frequency_pal = 14750000.0;
 
-  float sample_freq = retro_get_region() == RETRO_REGION_NTSC ? sample_frequency_ntsc : sample_frequency_pal;
-  float dot_rate = SNES::cpu.frequency / 4.0;
+   float sample_freq = retro_get_region() == RETRO_REGION_NTSC ? sample_frequency_ntsc : sample_frequency_pal;
+   float dot_rate = SNES::cpu.frequency / 4.0;
 
-  if (aspect_ratio_mode == 1) // ntsc
-  {
-    sample_freq = sample_frequency_ntsc;
-    dot_rate = NTSC_MASTER_CLOCK / 4.0;
-  }
-  else if (aspect_ratio_mode == 2) // pal
-  {
-    sample_freq = sample_frequency_pal;
-    dot_rate = PAL_MASTER_CLOCK / 4.0;
-  }
+   if (aspect_ratio_mode == 1) // ntsc
+   {
+      sample_freq = sample_frequency_ntsc;
+      dot_rate = NTSC_MASTER_CLOCK / 4.0;
+   }
+   else if (aspect_ratio_mode == 2) // pal
+   {
+      sample_freq = sample_frequency_pal;
+      dot_rate = PAL_MASTER_CLOCK / 4.0;
+   }
 
-  float par = sample_freq / 2.0 / dot_rate;
-  return (float)width * par / (float)height;
+   float par = sample_freq / 2.0 / dot_rate;
+   return (float)width * par / (float)height;
 }
 
 void retro_get_system_av_info(struct retro_system_av_info *info)
 {
-    memset(info,0,sizeof(retro_system_av_info));
-    unsigned width = SNES_WIDTH;
-    unsigned height = PPU.ScreenHeight;
-    if (crop_overscan_mode == 1) // enabled
+   memset(info,0,sizeof(retro_system_av_info));
+   unsigned width = SNES_WIDTH;
+   unsigned height = PPU.ScreenHeight;
+   if (crop_overscan_mode == 1) // enabled
       height = SNES_HEIGHT;
-    else if (crop_overscan_mode == 2) // disabled
+   else if (crop_overscan_mode == 2) // disabled
       height = SNES_HEIGHT_EXTENDED;
 
-    info->geometry.base_width = width;
-    info->geometry.base_height = height;
-    info->geometry.max_width = MAX_SNES_WIDTH;
-    info->geometry.max_height = MAX_SNES_HEIGHT;
-    info->geometry.aspect_ratio = get_aspect_ratio(width, height);
-    info->timing.sample_rate = 32040;
-    info->timing.fps = retro_get_region() == RETRO_REGION_NTSC ? 21477272.0 / 357366.0 : 21281370.0 / 425568.0;
+   info->geometry.base_width = width;
+   info->geometry.base_height = height;
+   info->geometry.max_width = MAX_SNES_WIDTH;
+   info->geometry.max_height = MAX_SNES_HEIGHT;
+   info->geometry.aspect_ratio = get_aspect_ratio(width, height);
+   info->timing.sample_rate = 32040;
+   info->timing.fps = retro_get_region() == RETRO_REGION_NTSC ? 21477272.0 / 357366.0 : 21281370.0 / 425568.0;
 }
 
 unsigned retro_api_version()
@@ -465,7 +470,7 @@ void retro_set_controller_port_device(unsigned port, unsigned device)
          case RETRO_DEVICE_NONE:
             S9xSetController(port, CTL_NONE, port, 0, 0, 0);
             snes_devices[port] = RETRO_DEVICE_NONE;
-			break;
+            break;
          case RETRO_DEVICE_JOYPAD:
             S9xSetController(port, CTL_JOYPAD, port * offset, 0, 0, 0);
             snes_devices[port] = RETRO_DEVICE_JOYPAD;
@@ -568,41 +573,41 @@ static unsigned memorydesc_c;
 
 static bool merge_mapping()
 {
-	if (memorydesc_c==1) return false;//can't merge the only one
-	struct retro_memory_descriptor * a=&memorydesc[MAX_MAPS - (memorydesc_c-1)];
-	struct retro_memory_descriptor * b=&memorydesc[MAX_MAPS - memorydesc_c];
+    if (memorydesc_c==1) return false;//can't merge the only one
+    struct retro_memory_descriptor * a=&memorydesc[MAX_MAPS - (memorydesc_c-1)];
+    struct retro_memory_descriptor * b=&memorydesc[MAX_MAPS - memorydesc_c];
 //printf("test %x/%x\n",a->start,b->start);
-	if (a->flags != b->flags) return false;
-	if (a->disconnect != b->disconnect) return false;
-	if (a->len != b->len) return false;
-	if (a->addrspace || b->addrspace) return false;//we don't use these
-	if (((char*)a->ptr)+a->offset==((char*)b->ptr)+b->offset && a->select==b->select)
-	{
+    if (a->flags != b->flags) return false;
+    if (a->disconnect != b->disconnect) return false;
+    if (a->len != b->len) return false;
+    if (a->addrspace || b->addrspace) return false;//we don't use these
+    if (((char*)a->ptr)+a->offset==((char*)b->ptr)+b->offset && a->select==b->select)
+    {
 //printf("merge/mirror\n");
-		a->select&=~(a->start^b->start);
-		memorydesc_c--;
-		return true;
-	}
-	uint32 len=a->len;
-	if (!len) len=(0x1000000 - a->select);
-	if (len && ((len-1) & (len | a->disconnect))==0 && ((char*)a->ptr)+a->offset+len == ((char*)b->ptr)+b->offset)
-	{
+        a->select&=~(a->start^b->start);
+        memorydesc_c--;
+        return true;
+    }
+    uint32 len=a->len;
+    if (!len) len=(0x1000000 - a->select);
+    if (len && ((len-1) & (len | a->disconnect))==0 && ((char*)a->ptr)+a->offset+len == ((char*)b->ptr)+b->offset)
+    {
 //printf("merge/consec\n");
-		a->select &=~ len;
-		a->disconnect &=~ len;
-		memorydesc_c--;
-		return true;
-	}
+        a->select &=~ len;
+        a->disconnect &=~ len;
+        memorydesc_c--;
+        return true;
+    }
 //printf("nomerge\n");
-	return false;
+    return false;
 }
 
 void S9xAppendMapping(struct retro_memory_descriptor *desc)
 {
-	//do it backwards - snes9x defines the last one to win, while we define the first one to win
-	//printf("add %x\n",desc->start);
-	memcpy(&memorydesc[MAX_MAPS - (++memorydesc_c)], desc, sizeof(struct retro_memory_descriptor));
-	while (merge_mapping()) {}
+    //do it backwards - snes9x defines the last one to win, while we define the first one to win
+    //printf("add %x\n",desc->start);
+    memcpy(&memorydesc[MAX_MAPS - (++memorydesc_c)], desc, sizeof(struct retro_memory_descriptor));
+    while (merge_mapping()) {}
 }
 
 static void init_descriptors(void)
@@ -721,11 +726,25 @@ bool retro_load_game(const struct retro_game_info *game)
     * split second - this happens whenever the game switches from normal
     * mode to battle mode and vice versa. */
    ChronoTriggerFrameHack = false;
-   if (Memory.match_nc("CHRONO TRIGGER") ||	/* Chrono Trigger */
+   if (Memory.match_nc("CHRONO TRIGGER") || /* Chrono Trigger */
       Memory.match_id("ACT") ||
-      Memory.match_id("AC9J")		/* Chrono Trigger (Sample) */
+      Memory.match_id("AC9J")       /* Chrono Trigger (Sample) */
       )
-         ChronoTriggerFrameHack = true;
+   {
+      ChronoTriggerFrameHack = true;
+   }
+
+   lufia2_credits_hack = false;
+   if (Memory.match_id("E9ANIE") ||
+       Memory.match_id("01ANIP") ||
+       Memory.match_id("C0ANIJ") ||
+       Memory.match_id("01ANIS") ||
+       Memory.match_id("01ANIH") ||
+       Memory.match_id("01ANID")
+      )
+   {
+      lufia2_credits_hack = true;
+   }
 
    struct retro_memory_map map={ memorydesc+MAX_MAPS-memorydesc_c, memorydesc_c };
    if (rom_loaded) environ_cb(RETRO_ENVIRONMENT_SET_MEMORY_MAPS, &map);
@@ -741,57 +760,57 @@ void retro_unload_game(void)
 bool retro_load_game_special(unsigned game_type,
       const struct retro_game_info *info, size_t num_info) {
 
-  init_descriptors();
-  memorydesc_c = 0;
+   init_descriptors();
+   memorydesc_c = 0;
 
-  update_variables();
+   update_variables();
 
-  switch (game_type) {
-     case RETRO_GAME_TYPE_BSX:
+   switch (game_type) {
+      case RETRO_GAME_TYPE_BSX:
+      
+         if(num_info == 1) {
+            rom_loaded = Memory.LoadROMMem((const uint8_t*)info[0].data,info[0].size);
+         } else if(num_info == 2) {
+            memcpy(Memory.BIOSROM,(const uint8_t*)info[0].data,info[0].size);
+            rom_loaded = Memory.LoadROMMem((const uint8_t*)info[1].data,info[1].size);
+         }
 
-       if(num_info == 1) {
-          rom_loaded = Memory.LoadROMMem((const uint8_t*)info[0].data,info[0].size);
-       } else if(num_info == 2) {
-          memcpy(Memory.BIOSROM,(const uint8_t*)info[0].data,info[0].size);
-          rom_loaded = Memory.LoadROMMem((const uint8_t*)info[1].data,info[1].size);
-       }
+         if (!rom_loaded && log_cb)
+            log_cb(RETRO_LOG_ERROR, "[libretro]: BSX ROM loading failed...\n");
 
-       if (!rom_loaded && log_cb)
-          log_cb(RETRO_LOG_ERROR, "[libretro]: BSX ROM loading failed...\n");
+         break;
 
-       break;
+      case RETRO_GAME_TYPE_BSX_SLOTTED:
+      
+         if(num_info == 2)
+            rom_loaded = Memory.LoadMultiCartMem((const uint8_t*)info[0].data, info[0].size,
+                         (const uint8_t*)info[1].data, info[1].size, NULL, 0);
 
-     case RETRO_GAME_TYPE_BSX_SLOTTED:
+         if (!rom_loaded && log_cb)
+            log_cb(RETRO_LOG_ERROR, "[libretro]: Multirom loading failed...\n");
+        
+         break;
 
-       if(num_info == 2)
-           rom_loaded = Memory.LoadMultiCartMem((const uint8_t*)info[0].data, info[0].size,
-                        (const uint8_t*)info[1].data, info[1].size, NULL, 0);
+      case RETRO_GAME_TYPE_SUFAMI_TURBO:
+      
+         if(num_info == 3)
+            rom_loaded = Memory.LoadMultiCartMem((const uint8_t*)info[1].data, info[1].size,
+                         (const uint8_t*)info[2].data, info[2].size, (const uint8_t*)info[0].data, info[0].size);
 
-       if (!rom_loaded && log_cb)
-          log_cb(RETRO_LOG_ERROR, "[libretro]: Multirom loading failed...\n");
+         if (!rom_loaded && log_cb)
+            log_cb(RETRO_LOG_ERROR, "[libretro]: Sufami Turbo ROM loading failed...\n");
+        
+         break;
 
-       break;
+      default:
+         rom_loaded = false;
+         break;
+   }
 
-     case RETRO_GAME_TYPE_SUFAMI_TURBO:
+   struct retro_memory_map map={ memorydesc+MAX_MAPS-memorydesc_c, memorydesc_c };
+   if (rom_loaded) environ_cb(RETRO_ENVIRONMENT_SET_MEMORY_MAPS, &map);
 
-       if(num_info == 3)
-           rom_loaded = Memory.LoadMultiCartMem((const uint8_t*)info[1].data, info[1].size,
-                        (const uint8_t*)info[2].data, info[2].size, (const uint8_t*)info[0].data, info[0].size);
-
-       if (!rom_loaded && log_cb)
-          log_cb(RETRO_LOG_ERROR, "[libretro]: Sufami Turbo ROM loading failed...\n");
-
-       break;
-
-     default:
-       rom_loaded = false;
-       break;
-  }
-
-  struct retro_memory_map map={ memorydesc+MAX_MAPS-memorydesc_c, memorydesc_c };
-  if (rom_loaded) environ_cb(RETRO_ENVIRONMENT_SET_MEMORY_MAPS, &map);
-
-  return rom_loaded;
+   return rom_loaded;
 }
 
 static void map_buttons();
@@ -817,7 +836,7 @@ void retro_init(void)
    environ_cb(RETRO_ENVIRONMENT_SET_SUPPORT_ACHIEVEMENTS, &achievements);
 
    memset(&Settings, 0, sizeof(Settings));
-   Settings.SuperFXSpeedPerLine = 0.417 * 10.5e6;
+   Settings.SuperFXClockMultiplier = 100;
    Settings.MouseMaster = TRUE;
    Settings.SuperScopeMaster = TRUE;
    Settings.JustifierMaster = TRUE;
@@ -866,6 +885,7 @@ void retro_init(void)
 
    GFX.Pitch = MAX_SNES_WIDTH * sizeof(uint16);
    GFX.Screen = (uint16*) calloc(1, GFX.Pitch * MAX_SNES_HEIGHT);
+   gfx_blend = (uint16*) calloc(1, GFX.Pitch * MAX_SNES_HEIGHT);
    S9xGraphicsInit();
 
    S9xInitInputDevices();
@@ -1006,16 +1026,17 @@ static void map_buttons()
    MAP_BUTTON(MAKE_BUTTON(PAD_5, BTN_RIGHT), "Joypad5 Right");
    MAP_BUTTON(MAKE_BUTTON(PAD_5, BTN_UP), "Joypad5 Up");
    MAP_BUTTON(MAKE_BUTTON(PAD_5, BTN_DOWN), "Joypad5 Down");
-
 }
 
 // libretro uses relative values for analogue devices.
 // S9x seems to use absolute values, but do convert these into relative values in the core. (Why?!)
 // Hack around it. :)
+
 static int16_t snes_mouse_state[2][2] = {{0}, {0}};
 static int16_t snes_scope_state[2] = {0};
 static int16_t snes_justifier_state[2][2] = {{0}, {0}};
 static int16_t snes_macsrifle_state[2] = {0};
+
 static void report_buttons()
 {
    int _x, _y;
@@ -1025,8 +1046,8 @@ static void report_buttons()
       switch (snes_devices[port])
       {
          case RETRO_DEVICE_NONE:
-			break;
-			
+            break;
+            
          case RETRO_DEVICE_JOYPAD:
             for (int i = BTN_FIRST; i <= BTN_LAST; i++)
                S9xReportButton(MAKE_BUTTON(port * offset + 1, i), input_state_cb(port * offset, RETRO_DEVICE_JOYPAD, 0, i));
@@ -1088,7 +1109,6 @@ static void report_buttons()
          default:
             if (log_cb)
                log_cb(RETRO_LOG_ERROR, "[libretro]: Unknown device...\n");
-
       }
    }
 }
@@ -1140,6 +1160,7 @@ void retro_deinit()
    S9xUnmapAllControls();
 
    free(GFX.Screen);
+   free(gfx_blend);
 }
 
 
@@ -1156,25 +1177,25 @@ void* retro_get_memory_data(unsigned type)
       case RETRO_MEMORY_SNES_SUFAMI_TURBO_A_RAM:
       case RETRO_MEMORY_SAVE_RAM:
          data = Memory.SRAM;
-		 break;
+         break;
       case RETRO_MEMORY_SNES_SUFAMI_TURBO_B_RAM:
          data = Multi.sramB;
          break;
-	  case RETRO_MEMORY_RTC:
-	     data = RTCData.reg;
+      case RETRO_MEMORY_RTC:
+         data = RTCData.reg;
          break;
-     case RETRO_MEMORY_SYSTEM_RAM:
-        data = Memory.RAM;
-        break;
-     case RETRO_MEMORY_VIDEO_RAM:
-        data = Memory.VRAM;
-        break;
-     //case RETRO_MEMORY_ROM:
-     //   data = Memory.ROM;
-     //   break;
-	  default:
-	     data = NULL;
-		 break;
+      case RETRO_MEMORY_SYSTEM_RAM:
+         data = Memory.RAM;
+         break;
+      case RETRO_MEMORY_VIDEO_RAM:
+         data = Memory.VRAM;
+         break;
+      //case RETRO_MEMORY_ROM:
+      //   data = Memory.ROM;
+      //   break;
+      default:
+         data = NULL;
+         break;
    }
 
    return data;
@@ -1189,14 +1210,14 @@ size_t retro_get_memory_size(unsigned type)
       case RETRO_MEMORY_SAVE_RAM:
          size = (unsigned) (Memory.SRAMSize ? (1 << (Memory.SRAMSize + 3)) * 128 : 0);
          if (size > 0x20000)
-		    size = 0x20000;
-		 break;
+            size = 0x20000;
+         break;
       case RETRO_MEMORY_SNES_SUFAMI_TURBO_B_RAM:
          size = (unsigned) (Multi.cartType && Multi.sramSizeB ? (1 << (Multi.sramSizeB + 3)) * 128 : 0);
          break;
-	  case RETRO_MEMORY_RTC:
-		 size = (Settings.SRTC || Settings.SPC7110RTC)?20:0;
-		 break;
+      case RETRO_MEMORY_RTC:
+         size = (Settings.SRTC || Settings.SPC7110RTC)?20:0;
+         break;
       case RETRO_MEMORY_SYSTEM_RAM:
          size = 128 * 1024;
          break;
@@ -1206,9 +1227,9 @@ size_t retro_get_memory_size(unsigned type)
       //case RETRO_MEMORY_ROM:
       //   size = Memory.CalculatedSize;
       //   break;
-	  default:
-	     size = 0;
-		 break;
+      default:
+         size = 0;
+         break;
    }
 
    return size;
@@ -1221,15 +1242,15 @@ size_t retro_serialize_size()
 
 bool retro_serialize(void *data, size_t size)
 {
-	int result = -1;
-	bool okay = false;
-	okay = environ_cb(RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE, &result);
-	if (okay)
-	{
-		Settings.FastSavestates = 0 != (result & 4);
-	}
-	if (S9xFreezeGameMem((uint8_t*)data,size) == FALSE)
-      return false;
+   int result = -1;
+   bool okay = false;
+   okay = environ_cb(RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE, &result);
+   if (okay)
+   {
+       Settings.FastSavestates = 0 != (result & 4);
+   }
+   if (S9xFreezeGameMem((uint8_t*)data,size) == FALSE)
+     return false;
 
    return true;
 }
@@ -1241,7 +1262,7 @@ bool retro_unserialize(const void* data, size_t size)
    okay = environ_cb(RETRO_ENVIRONMENT_GET_AUDIO_VIDEO_ENABLE, &result);
    if (okay)
    {
-	   Settings.FastSavestates = 0 != (result & 4);
+       Settings.FastSavestates = 0 != (result & 4);
    }
    if (S9xUnfreezeGameMem((const uint8_t*)data,size) != SUCCESS)
       return false;
@@ -1251,7 +1272,7 @@ bool retro_unserialize(const void* data, size_t size)
 
 bool8 S9xDeinitUpdate(int width, int height)
 {
-	 // Apply Chrono Trigger Framehack
+   // Apply Chrono Trigger Framehack
    if (ChronoTriggerFrameHack && (height > SNES_HEIGHT))
       height = SNES_HEIGHT;
 
@@ -1282,12 +1303,44 @@ bool8 S9xDeinitUpdate(int width, int height)
       }
    }
 
-   video_cb(GFX.Screen, width, height, GFX.Pitch);
+   if(width==MAX_SNES_WIDTH && hires_blend)
+   {
+#define AVERAGE_565(el0, el1) (((el0) & (el1)) + ((((el0) ^ (el1)) & 0xF7DE) >> 1))
+      for (register int y = 0; y < height; y++)
+      {
+         register uint16 *input = (uint16 *) ((uint8 *) GFX.Screen + y * GFX.Pitch);
+         register uint16 *output = (uint16 *) ((uint8 *) gfx_blend + y * GFX.Pitch);
+         register uint16 l, r;
+
+         l = 0;
+         for (register int x = 0; x < (width >> 1); x++)
+         {
+            r = *input++;
+            *output++ = AVERAGE_565 (l, r);
+            l = r;
+
+            r = *input++;
+            *output++ = AVERAGE_565 (l, r);
+            l = r;
+         }
+      }
+
+      video_cb(gfx_blend, width, height, GFX.Pitch);
+   }
+   else
+   { 
+      video_cb(GFX.Screen, width, height, GFX.Pitch);
+   }
+
    return TRUE;
 }
 
 bool8 S9xContinueUpdate(int width, int height)
 {
+   // scrolling credits interlace -- show whole frame
+   if(lufia2_credits_hack && PPU.BGMode==6)
+      return TRUE;
+
    return S9xDeinitUpdate(width, height);
 }
 
@@ -1351,26 +1404,26 @@ bool S9xPollPointer(unsigned int, short*, short*) { return false; }
 
 void S9xMessage(int type, int, const char* s)
 {
-	if (!log_cb) return;
+   if (!log_cb) return;
 
-	switch (type)
-	{
-		case S9X_DEBUG:
-			log_cb(RETRO_LOG_DEBUG, "%s\n", s);
-			break;
-		case S9X_WARNING:
-			log_cb(RETRO_LOG_WARN, "%s\n", s);
-			break;
-		case S9X_INFO:
-			log_cb(RETRO_LOG_INFO, "%s\n", s);
-			break;
-		case S9X_ERROR:
-			log_cb(RETRO_LOG_ERROR, "%s\n", s);
-			break;
-		default:
-			log_cb(RETRO_LOG_DEBUG, "%s\n", s);
-			break;
-	}
+   switch (type)
+   {
+      case S9X_DEBUG:
+         log_cb(RETRO_LOG_DEBUG, "%s\n", s);
+         break;
+      case S9X_WARNING:
+         log_cb(RETRO_LOG_WARN, "%s\n", s);
+         break;
+      case S9X_INFO:
+         log_cb(RETRO_LOG_INFO, "%s\n", s);
+         break;
+      case S9X_ERROR:
+         log_cb(RETRO_LOG_ERROR, "%s\n", s);
+         break;
+      default:
+         log_cb(RETRO_LOG_DEBUG, "%s\n", s);
+         break;
+   }
 }
 
 bool8 S9xOpenSnapshotFile(const char* filepath, bool8 read_only, STREAM *file)
@@ -1408,7 +1461,7 @@ void _splitpath (const char *path, char *drive, char *dir, char *fname, char *ex
 {
    *drive = 0;
 
-   const char	*slash = strrchr(path, SLASH_CHAR),
+   const char   *slash = strrchr(path, SLASH_CHAR),
          *dot   = strrchr(path, '.');
 
    if (dot && slash && dot < slash)
