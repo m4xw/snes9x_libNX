@@ -2788,7 +2788,7 @@ void CMemory::map_lorom (uint32 bank_s, uint32 bank_e, uint32 addr_s, uint32 add
 
 	if (auto_export_map)
 	{
-		struct retro_memory_descriptor desc = {0,0,0,0,0,0,0};
+		struct retro_memory_descriptor desc = {};
 		desc.flags=RETRO_MEMDESC_CONST;
 		desc.ptr=ROM;
 		desc.start=bank_s<<16 | addr_s;
@@ -2817,7 +2817,7 @@ void CMemory::map_hirom (uint32 bank_s, uint32 bank_e, uint32 addr_s, uint32 add
 
 	if (auto_export_map)
 	{
-		struct retro_memory_descriptor desc = {0,0,0,0,0,0,0};
+		struct retro_memory_descriptor desc = {};
 		desc.flags=RETRO_MEMDESC_CONST;
 		desc.ptr=ROM;
 		desc.offset=map_mirror(size, addr_s);
@@ -2846,7 +2846,7 @@ void CMemory::map_lorom_offset (uint32 bank_s, uint32 bank_e, uint32 addr_s, uin
 
 	if (auto_export_map)
 	{
-		struct retro_memory_descriptor desc = {0,0,0,0,0,0,0};
+		struct retro_memory_descriptor desc = {};
 		desc.flags=RETRO_MEMDESC_CONST;
 		desc.ptr=ROM;
 		desc.offset=offset;
@@ -2876,7 +2876,7 @@ void CMemory::map_hirom_offset (uint32 bank_s, uint32 bank_e, uint32 addr_s, uin
 
 	if (auto_export_map)
 	{
-		struct retro_memory_descriptor desc = {0,0,0,0,0,0,0};
+		struct retro_memory_descriptor desc = {};
 		desc.flags=RETRO_MEMDESC_CONST;
 		desc.ptr=ROM;
 		desc.offset=map_mirror(size, offset + addr_s);
@@ -2903,7 +2903,7 @@ void CMemory::map_space (uint32 bank_s, uint32 bank_e, uint32 addr_s, uint32 add
 	}
 	if (auto_export_map)
 	{
-		struct retro_memory_descriptor desc = {0,0,0,0,0,0,0};
+		struct retro_memory_descriptor desc = {};
 		desc.ptr=data;
 		desc.start=bank_s<<16 | addr_s;
 		desc.select=(bank_s<<16 | addr_s) ^ (bank_e<<16 | addr_e) ^ 0xFFFFFF;
@@ -2933,7 +2933,7 @@ void CMemory::map_index (uint32 bank_s, uint32 bank_e, uint32 addr_s, uint32 add
 
 	if (auto_export_map)
 	{
-		struct retro_memory_descriptor desc = {0,0,0,0,0,0,0};
+		struct retro_memory_descriptor desc = {};
 		desc.start=bank_s<<16 | addr_s;
 		desc.select=(bank_s<<16 | addr_s) ^ (bank_e<<16 | addr_e) ^ 0xFFFFFF;
 		if (type==MAP_LOROM_SRAM || type==MAP_SA1RAM)
