@@ -66,12 +66,12 @@ class HermiteResampler : public Resampler
         void
         read (short *data, int num_samples)
         {
-			//If we are outputting the exact same ratio as the input, pull directly from the input buffer
-			if (r_step == 1.0)
-			{
-				ring_buffer::pull((unsigned char*)data, num_samples * sizeof(short));
-				return;
-			}
+            //If we are outputting the exact same ratio as the input, pull directly from the input buffer
+            if (r_step == 1.0)
+            {
+                ring_buffer::pull((unsigned char*)data, num_samples * sizeof(short));
+                return;
+            }
 
             int i_position = start >> 1;
             int max_samples = buffer_size >> 1;
@@ -127,13 +127,13 @@ class HermiteResampler : public Resampler
         inline int
         avail (void)
         {
-			//If we are outputting the exact same ratio as the input, find out directly from the input buffer
-			if (r_step == 1.0)
-			{
-				return (ring_buffer::space_filled() + sizeof(short) - 1) / sizeof(short);
-			}
+            //If we are outputting the exact same ratio as the input, find out directly from the input buffer
+            if (r_step == 1.0)
+            {
+                return (ring_buffer::space_filled() + sizeof(short) - 1) / sizeof(short);
+            }
 
-			return (int) floor (((size >> 2) - r_frac) / r_step) * 2;
+            return (int) floor (((size >> 2) - r_frac) / r_step) * 2;
         }
 };
 
