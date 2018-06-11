@@ -287,6 +287,7 @@ struct CMemory
 	int		ScoreLoROM (bool8, int32 romoff = 0);
 	uint32	HeaderRemove (uint32, uint8 *);
 	uint32	FileLoader (uint8 *, const char *, uint32);
+    uint32  MemLoader (uint8 *, const char*, uint32);
     bool8   LoadROMMem (const uint8 *, uint32);
 	bool8	LoadROM (const char *);
     bool8	LoadROMInt (int32);
@@ -294,13 +295,14 @@ struct CMemory
 	bool8	LoadMultiCart (const char *, const char *);
     bool8	LoadMultiCartInt ();
 	bool8	LoadSufamiTurbo ();
-	bool8	LoadSameGame ();
+	bool8	LoadBSCart ();
 	bool8	LoadGNEXT ();
 	bool8	LoadSRAM (const char *);
 	bool8	SaveSRAM (const char *);
 	void	ClearSRAM (bool8 onlyNonSavedSRAM = 0);
 	bool8	LoadSRTC (void);
 	bool8	SaveSRTC (void);
+	bool8	SaveMPAK (const char *);
 
 	char *	Safe (const char *);
 	char *	SafeANK (const char *);
@@ -336,11 +338,12 @@ struct CMemory
 	void	Map_SetaDSPLoROMMap (void);
 	void	Map_SDD1LoROMMap (void);
 	void	Map_SA1LoROMMap (void);
-	void	Map_GNEXTSA1LoROMMap (void);
+	void	Map_BSSA1LoROMMap (void);
 	void	Map_HiROMMap (void);
 	void	Map_ExtendedHiROMMap (void);
-	void	Map_SameGameHiROMMap (void);
 	void	Map_SPC7110HiROMMap (void);
+	void	Map_BSCartLoROMMap(uint8);
+	void	Map_BSCartHiROMMap(void);
 
 	uint16	checksum_calc_sum (uint8 *, uint32);
 	uint16	checksum_mirror_sum (uint8 *, uint32 &, uint32 mask = 0x800000);

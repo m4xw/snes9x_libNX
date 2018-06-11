@@ -209,6 +209,8 @@
 #include "netplay.h"
 #endif
 
+#include "libretro\libretro.h"
+
 using namespace	std;
 
 #define NONE					(-2)
@@ -570,6 +572,7 @@ void S9xControlsReset (void)
 	mouse[0].buttons  &= ~0x30;
 	mouse[1].buttons  &= ~0x30;
 	justifier.buttons &= ~JUSTIFIER_SELECT;
+	macsrifle.buttons = 0;
 }
 
 void S9xControlsSoftReset (void)
@@ -2284,8 +2287,8 @@ void S9xApplyCommand (s9xcommand_t cmd, int16 data1, int16 data2)
 
 				superscope.next_buttons |= i & (SUPERSCOPE_FIRE | SUPERSCOPE_CURSOR | SUPERSCOPE_PAUSE);
 
-            if ((superscope.next_buttons & (SUPERSCOPE_FIRE | SUPERSCOPE_CURSOR)) && curcontrollers[1] == SUPERSCOPE && !(superscope.phys_buttons & SUPERSCOPE_OFFSCREEN))
-						DoGunLatch(superscope.x, superscope.y);
+				if ((superscope.next_buttons & (SUPERSCOPE_FIRE | SUPERSCOPE_CURSOR)) && curcontrollers[1] == SUPERSCOPE && !(superscope.phys_buttons & SUPERSCOPE_OFFSCREEN))
+					DoGunLatch(superscope.x, superscope.y);
 			}
 			else
 			{
@@ -2999,7 +3002,7 @@ void S9xSetJoypadLatch (bool latch)
 				case MOUSE0:
 				case MOUSE1:
 					do_polling(i);
-               UpdatePolledMouse(i);
+					UpdatePolledMouse(i);
 					break;
 
 				case SUPERSCOPE:
@@ -3701,6 +3704,7 @@ void S9xControlPostLoadState (struct SControlSnapshot *s)
 		COPY(superscope.next_buttons);
 		COPY(superscope.read_buttons);
 
+		
 		for (int j = 0; j < 2; j++)
 			COPY(justifier.x[j]);
 		for (int j = 0; j < 2; j++)

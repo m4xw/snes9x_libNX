@@ -192,6 +192,9 @@
 
 #include <ctype.h>
 #include <string.h>
+#ifdef HAVE_STRINGS_H
+#include <strings.h>
+#endif
 
 #include "snes9x.h"
 #include "memmap.h"
@@ -211,12 +214,13 @@ extern FILE	*trace;
 
 #define S9X_CONF_FILE_NAME	"snes9x.conf"
 
-#ifndef __LIBRETRO__
 static char	*rom_filename = NULL;
 
+#ifndef __LIBRETRO__
 static bool parse_controller_spec (int, const char *);
 static void parse_crosshair_spec (enum crosscontrols, const char *);
 static bool try_load_config_file (const char *, ConfigFile &);
+
 
 static bool parse_controller_spec (int port, const char *arg)
 {
@@ -386,13 +390,14 @@ void S9xLoadConfigFiles (char **argv, int argc)
 	Settings.ForceInterleaved2          =  conf.GetBool("ROM::Interleaved2",                   false);
 	Settings.ForceInterleaveGD24        =  conf.GetBool("ROM::InterleaveGD24",                 false);
 	Settings.ApplyCheats                =  conf.GetBool("ROM::Cheat",                          false);
+	Cheat.enabled = false;
+	Settings.NoPatch                    = !conf.GetBool("ROM::Patch",                          true);
+	Settings.IgnorePatchChecksum        =  conf.GetBool("ROM::IgnorePatchChecksum",            false);
 
 	Settings.ForceLoROM = conf.GetBool("ROM::LoROM", false);
 	Settings.ForceHiROM = conf.GetBool("ROM::HiROM", false);
 	if (Settings.ForceLoROM)
 		Settings.ForceHiROM = false;
-
-	Settings.SuperFXSpeedPerLine = 0.417 * 10.5e6;
 
 	Settings.ForcePAL   = conf.GetBool("ROM::PAL",  false);
 	Settings.ForceNTSC  = conf.GetBool("ROM::NTSC", false);
@@ -420,8 +425,10 @@ void S9xLoadConfigFiles (char **argv, int argc)
 	Settings.Stereo                     =  conf.GetBool("Sound::Stereo",                       true);
 	Settings.ReverseStereo              =  conf.GetBool("Sound::ReverseStereo",                false);
 	Settings.SoundPlaybackRate          =  conf.GetUInt("Sound::Rate",                         32000);
-	Settings.SoundInputRate             =  conf.GetUInt("Sound::InputRate",                    32000);
+	Settings.SoundInputRate             =  conf.GetUInt("Sound::InputRate",                    31950);
 	Settings.Mute                       =  conf.GetBool("Sound::Mute",                         false);
+	Settings.DynamicRateControl         =  conf.GetBool("Sound::DynamicRateControl",           false);
+	Settings.DynamicRateLimit           =  conf.GetInt ("Sound::DynamicRateLimit",             5);
 
 	// Display
 
@@ -431,14 +438,21 @@ void S9xLoadConfigFiles (char **argv, int argc)
 	Settings.DisplayFrameRate           =  conf.GetBool("Display::DisplayFrameRate",           false);
 	Settings.DisplayWatchedAddresses    =  conf.GetBool("Display::DisplayWatchedAddresses",    false);
 	Settings.DisplayPressedKeys         =  conf.GetBool("Display::DisplayInput",               false);
+	Settings.DisplayMovieFrame          =  conf.GetBool("Display::DisplayFrameCount",          false);
 	Settings.AutoDisplayMessages        =  conf.GetBool("Display::MessagesInImage",            true);
 	Settings.InitialInfoStringTimeout   =  conf.GetInt ("Display::MessageDisplayTime",         120);
+	Settings.BilinearFilter             =  conf.GetBool("Display::BilinearFilter",             false);
 
 	// Settings
 
 	Settings.BSXBootup                  =  conf.GetBool("Settings::BSXBootup",                 false);
 	Settings.TurboMode                  =  conf.GetBool("Settings::TurboMode",                 false);
 	Settings.TurboSkipFrames            =  conf.GetUInt("Settings::TurboFrameSkip",            15);
+	Settings.MovieTruncate              =  conf.GetBool("Settings::MovieTruncateAtEnd",        false);
+	Settings.MovieNotifyIgnored         =  conf.GetBool("Settings::MovieNotifyIgnored",        false);
+	Settings.WrongMovieStateProtection  =  conf.GetBool("Settings::WrongMovieStateProtection", true);
+	Settings.StretchScreenshots         =  conf.GetInt ("Settings::StretchScreenshots",        1);
+	Settings.SnapshotScreenshots        =  conf.GetBool("Settings::SnapshotScreenshots",       true);
 	Settings.DontSaveOopsSnapshot       =  conf.GetBool("Settings::DontSaveOopsSnapshot",      false);
 	Settings.AutoSaveDelay              =  conf.GetUInt("Settings::AutoSaveDelay",             0);
 
@@ -478,6 +492,7 @@ void S9xLoadConfigFiles (char **argv, int argc)
 		parse_crosshair_spec(X_MACSRIFLE, conf.GetString("Controls::MacsRifleCrosshair"));
 
 	// Hack
+	Settings.SuperFXClockMultiplier         = conf.GetUInt("Hack::SuperFXClockMultiplier", 100);
 
 	Settings.DisableGameSpecificHacks       = !conf.GetBool("Hack::EnableGameSpecificHacks",       true);
 	Settings.BlockInvalidVRAMAccessMaster   = !conf.GetBool("Hack::AllowInvalidVRAMAccess",        false);
@@ -581,9 +596,8 @@ void S9xUsage (void)
 	// PATCH/CHEAT OPTIONS
 	S9xMessage(S9X_INFO, S9X_USAGE, "-nopatch                        Do not apply any available IPS/UPS patches");
 	S9xMessage(S9X_INFO, S9X_USAGE, "-cheat                          Apply saved cheats");
-	S9xMessage(S9X_INFO, S9X_USAGE, "-gamegenie <code>               Supply a Game Genie code");
-	S9xMessage(S9X_INFO, S9X_USAGE, "-actionreplay <code>            Supply a Pro-Action Reply code");
-	S9xMessage(S9X_INFO, S9X_USAGE, "-goldfinger <code>              Supply a Gold Finger code");
+	S9xMessage(S9X_INFO, S9X_USAGE, "-cheatcode <code>               Supply a cheat code in Game Genie,");
+	S9xMessage(S9X_INFO, S9X_USAGE, "                                Pro-Action Replay, or Raw format (address=byte)");
 	S9xMessage(S9X_INFO, S9X_USAGE, "");
 
 #ifdef NETPLAY_SUPPORT
@@ -622,6 +636,31 @@ void S9xUsage (void)
 	exit(1);
 }
 
+void S9xParseArgsForCheats (char **argv, int argc)
+{
+    for (int i = 1; i < argc; i++)
+    {
+        if (!strcasecmp(argv[i], "-gamegenie") ||
+            !strcasecmp(argv[i], "-actionreplay") ||
+            !strcasecmp(argv[i], "-cheatcode"))
+        {
+            if (i + 1 < argc)
+            {
+                if (S9xAddCheatGroup ("Unknown", argv[++i]) < 0)
+                {
+                    S9xMessage(S9X_ERROR, S9X_GAME_GENIE_CODE_ERROR, "Code format invalid");
+                }
+                else
+                {
+                    S9xEnableCheatGroup (Cheat.g.size() - 1);
+                }
+            }
+            else
+                S9xUsage();
+        }
+    }
+}
+
 char * S9xParseArgs (char **argv, int argc)
 {
 	for (int i = 1; i < argc; i++)
@@ -654,8 +693,10 @@ char * S9xParseArgs (char **argv, int argc)
 				if (i + 1 < argc)
 				{
 					Settings.SoundInputRate = atoi(argv[++i]);
-					if (Settings.SoundInputRate < 8192)
-						Settings.SoundInputRate = 8192;
+					if (Settings.SoundInputRate < 31700)
+						Settings.SoundInputRate = 31700;
+					if (Settings.SoundInputRate > 32300)
+						Settings.SoundInputRate = 32300;
 				}
 				else
 					S9xUsage();
@@ -757,64 +798,41 @@ char * S9xParseArgs (char **argv, int argc)
 			else
 			if (!strcasecmp(argv[i], "-bsxbootup"))
 				Settings.BSXBootup = TRUE;
+                        else
+                        if (!strcasecmp(argv[i], "-snapshot"))
+                        {
+                                if (i + 1 < argc)
+                                {
+                                        strncpy(Settings.InitialSnapshotFilename, argv[++i], PATH_MAX);
+                                        Settings.InitialSnapshotFilename[PATH_MAX] = 0;
+                                }
+                                else
+                                        S9xUsage();
+                        }
 			else
 
 			// PATCH/CHEAT OPTIONS
 
+			if (!strcasecmp(argv[i], "-nopatch"))
+				Settings.NoPatch = TRUE;
+			else
 			if (!strcasecmp(argv[i], "-cheat"))
 				Settings.ApplyCheats = TRUE;
 			else
-			if (!strcasecmp(argv[i], "-gamegenie"))
+			if (!strcasecmp(argv[i], "-gamegenie") ||
+			    !strcasecmp(argv[i], "-actionreplay") ||
+			    !strcasecmp(argv[i], "-cheatcode"))
 			{
 				if (i + 1 < argc)
 				{
-					uint32		address;
-					uint8		byte;
-					const char	*error;
-
-					if ((error = S9xGameGenieToRaw(argv[++i], address, byte)) == NULL)
-						S9xAddCheat(TRUE, FALSE, address, byte);
-					else
-						S9xMessage(S9X_ERROR, S9X_GAME_GENIE_CODE_ERROR, error);
-				}
-				else
-					S9xUsage();
-			}
-			else
-			if (!strcasecmp(argv[i], "-actionreplay"))
-			{
-				if (i + 1 < argc)
-				{
-					uint32		address;
-					uint8		byte;
-					const char	*error;
-
-					if ((error = S9xProActionReplayToRaw(argv[++i], address, byte)) == NULL)
-						S9xAddCheat(TRUE, FALSE, address, byte);
-					else
-						S9xMessage(S9X_ERROR, S9X_ACTION_REPLY_CODE_ERROR, error);
-				}
-				else
-					S9xUsage();
-			}
-			else
-			if (!strcasecmp(argv[i], "-goldfinger"))
-			{
-				if (i + 1 < argc)
-				{
-					uint32		address;
-					uint8		bytes[3];
-					bool8		sram;
-					uint8		num_bytes;
-					const char	*error;
-
-					if ((error = S9xGoldFingerToRaw(argv[++i], address, sram, num_bytes, bytes)) == NULL)
+					if (S9xAddCheatGroup ("Unknown", argv[++i]) < 0)
 					{
-						for (int c = 0; c < num_bytes; c++)
-							S9xAddCheat(TRUE, FALSE, address + c, bytes[c]);
+						S9xMessage(S9X_ERROR, S9X_GAME_GENIE_CODE_ERROR, "Code format invalid");
 					}
 					else
-						S9xMessage(S9X_ERROR, S9X_GOLD_FINGER_CODE_ERROR, error);
+					{
+						S9xEnableCheatGroup (Cheat.g.size() - 1);
+					}
 				}
 				else
 					S9xUsage();
@@ -921,4 +939,3 @@ char * S9xParseArgs (char **argv, int argc)
 	return (rom_filename);
 }
 #endif
-

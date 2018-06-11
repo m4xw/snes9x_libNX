@@ -231,8 +231,11 @@ class fStream : public Stream
 };
 
 #ifdef UNZIP_SUPPORT
-
-#include "unzip.h"
+#  ifdef SYSTEM_ZIP
+#    include <minizip/unzip.h>
+#  else
+#    include "unzip.h"
+#  endif
 
 #define unz_BUFFSIZ	1024
 
@@ -251,10 +254,15 @@ class unzStream : public Stream
         virtual void closeStream();
 
 	private:
+        void   fill_buffer();
+        size_t buffer_remaining();
+
 		unzFile	file;
 		char	buffer[unz_BUFFSIZ];
-		char	*head;
-		size_t	numbytes;
+        size_t  pos_in_buf;
+        size_t  buf_pos_in_unzipped;
+		size_t	bytes_in_buf;
+        unz_file_pos unz_file_start_pos;
 };
 
 #endif
