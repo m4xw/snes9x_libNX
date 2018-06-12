@@ -209,8 +209,6 @@
 #include "netplay.h"
 #endif
 
-#include "libretro\libretro.h"
-
 using namespace	std;
 
 #define NONE					(-2)
