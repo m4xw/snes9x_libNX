@@ -214,9 +214,9 @@ extern FILE	*trace;
 
 #define S9X_CONF_FILE_NAME	"snes9x.conf"
 
+#ifndef __LIBRETRO__
 static char	*rom_filename = NULL;
 
-#ifndef __LIBRETRO__
 static bool parse_controller_spec (int, const char *);
 static void parse_crosshair_spec (enum crosscontrols, const char *);
 static bool try_load_config_file (const char *, ConfigFile &);

@@ -299,14 +299,12 @@ void S9xReset (void)
 	memset(Memory.VRAM, 0x00, 0x10000);
 	memset(Memory.FillRAM, 0, 0x8000);
 
-	if (Settings.BS)
-		S9xResetBSX();
-
+	S9xResetBSX();
 	S9xResetCPU();
 	S9xResetPPU();
 	S9xResetDMA();
 	S9xResetAPU();
-    S9xResetMSU();
+	S9xResetMSU();
 
 	if (Settings.DSP)
 		S9xResetDSP();
