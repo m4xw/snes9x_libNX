@@ -738,7 +738,7 @@ static int is_bsx (uint8 *p)
    return (0);
 }
 
-static bool8 LoadBIOS(uint8 *biosrom, char *biosname, int biossize)
+static bool8 LoadBIOS(uint8 *biosrom, const char *biosname, size_t biossize)
 {
    FILE	*fp;
    char	name[PATH_MAX + 1];
@@ -771,7 +771,7 @@ static bool8 LoadBIOS(uint8 *biosrom, char *biosname, int biossize)
    return (r);
 }
 
-static bool8 is_SufamiTurbo_Cart (const uint8 *data, uint32 size)
+static bool8 is_SufamiTurbo_Cart (const uint8 *data, size_t size)
 {
    if (size >= 0x80000 && size <= 0x100000 &&
       strncmp((char *) data, "BANDAI SFC-ADX", 14) == 0 && strncmp((char * ) (data + 0x10), "SFC-ADX BACKUP", 14) != 0)
@@ -800,13 +800,13 @@ bool retro_load_game(const struct retro_game_info *game)
       }
 
       if (is_SufamiTurbo_Cart((uint8 *) game->data, game->size)) {
-         if (rom_loaded = LoadBIOS(biosrom,"STBIOS.bin",0x40000))
+         if (rom_loaded = (LoadBIOS(biosrom,"STBIOS.bin",0x40000)))
             rom_loaded = Memory.LoadMultiCartMem((const uint8_t*)game->data, game->size, 0, 0, biosrom, 0x40000);
       }
 
       else
       if ((is_bsx((uint8 *) game->data + 0x7fc0)==1) | (is_bsx((uint8 *) game->data + 0xffc0)==1)) {
-         if (rom_loaded = LoadBIOS(biosrom,"BS-X.bin",0x100000))
+         if (rom_loaded = (LoadBIOS(biosrom,"BS-X.bin",0x100000)))
             rom_loaded = Memory.LoadMultiCartMem(biosrom, 0x100000, (const uint8_t*)game->data, game->size, 0, 0);
       }
 
@@ -896,7 +896,7 @@ bool retro_load_game_special(unsigned game_type, const struct retro_game_info *i
             uint8 *biosrom = new uint8[0x100000];
 
             if (is_SufamiTurbo_Cart((const uint8_t*)info[0].data, info[0].size)) {
-              if (rom_loaded = LoadBIOS(biosrom,"STBIOS.bin",0x40000))
+              if (rom_loaded = (LoadBIOS(biosrom,"STBIOS.bin",0x40000)))
                  rom_loaded = Memory.LoadMultiCartMem((const uint8_t*)info[0].data, info[0].size,
                               (const uint8_t*)info[1].data, info[1].size, biosrom, 0x40000);
             }
@@ -919,7 +919,7 @@ bool retro_load_game_special(unsigned game_type, const struct retro_game_info *i
          if(num_info == 2) {
             uint8 *biosrom = new uint8[0x100000];
 
-            if (rom_loaded = LoadBIOS(biosrom,"STBIOS.bin",0x40000))
+            if (rom_loaded = (LoadBIOS(biosrom,"STBIOS.bin",0x40000)))
                rom_loaded = Memory.LoadMultiCartMem((const uint8_t*)info[0].data, info[0].size,
                             (const uint8_t*)info[1].data, info[1].size, biosrom, 0x40000);
 
