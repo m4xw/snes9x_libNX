@@ -1209,14 +1209,14 @@ void S9xResetSaveTimer (bool8 dontsave)
 
 uint32 S9xFreezeSize()
 {
-    nulStream stream;
-    S9xFreezeToStream(&stream);
-    return stream.size();
+	nulStream stream;
+	S9xFreezeToStream(&stream);
+	return stream.size();
 }
 
 bool8 S9xFreezeGameMem (uint8 *buf, uint32 bufSize)
 {
-    memStream mStream(buf, bufSize);
+	memStream mStream(buf, bufSize);
 	S9xFreezeToStream(&mStream);
 
 	return (TRUE);
@@ -1241,7 +1241,7 @@ bool8 S9xFreezeGame (const char *filename)
 
 int S9xUnfreezeGameMem (const uint8 *buf, uint32 bufSize)
 {
-    memStream stream(buf, bufSize);
+	memStream stream(buf, bufSize);
 	int result = S9xUnfreezeFromStream(&stream);
 
 	return result;
@@ -1405,9 +1405,9 @@ void S9xFreezeToStream (STREAM stream)
 		FreezeStruct(stream, "BSX", &BSX, SnapBSX, COUNT(SnapBSX));
 
 	// libretro: g++ guard warning
-    if (Settings.MSU1)
+	if (Settings.MSU1)
 	{
-        FreezeStruct(stream, "MSU", &MSU1, SnapMSU1, COUNT(SnapMSU1));
+		FreezeStruct(stream, "MSU", &MSU1, SnapMSU1, COUNT(SnapMSU1));
 	}
 
 	delete [] soundsnapshot;
@@ -1654,11 +1654,12 @@ int S9xUnfreezeFromStream (STREAM stream)
 		if (local_fillram)
 			memcpy(Memory.FillRAM, local_fillram, 0x8000);
 
-        if(version < SNAPSHOT_VERSION_BAPU) {
-            printf("Using Blargg APU snapshot loading (snapshot version %d, current is %d)\n...", version, SNAPSHOT_VERSION);
-            S9xAPULoadBlarggState(local_apu_sound);
-        } else
-		    S9xAPULoadState(local_apu_sound);
+		if(version < SNAPSHOT_VERSION_BAPU) {
+			printf("Using Blargg APU snapshot loading (snapshot version %d, current is %d)\n...", version, SNAPSHOT_VERSION);
+			S9xAPULoadBlarggState(local_apu_sound);
+		}
+		else
+			S9xAPULoadState(local_apu_sound);
 
 		struct SControlSnapshot	ctl_snap;
 		UnfreezeStructFromCopy(&ctl_snap, SnapControls, COUNT(SnapControls), local_control_data, version);
