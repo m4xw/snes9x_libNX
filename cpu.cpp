@@ -206,7 +206,6 @@
 
 static void S9xResetCPU (void);
 static void S9xSoftResetCPU (void);
-extern bool randomize_memory;
 
 
 static void S9xResetCPU (void)
@@ -288,14 +287,7 @@ void S9xReset (void)
 	S9xResetSaveTimer(FALSE);
 	S9xResetLogger();
 
-	if(!randomize_memory)
-		memset(Memory.RAM, 0x55, 0x20000);
-	else
-	{
-		srand(time(NULL));
-		for(int lcv=0; lcv<0x20000; lcv++)
-			Memory.RAM[lcv] = rand()%256;
-	}
+	memset(Memory.RAM, 0x55, 0x20000);
 	memset(Memory.VRAM, 0x00, 0x10000);
 	memset(Memory.FillRAM, 0, 0x8000);
 

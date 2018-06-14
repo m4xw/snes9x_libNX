@@ -195,7 +195,11 @@
 #include <assert.h>
 
 #ifdef UNZIP_SUPPORT
-#include "unzip/unzip.h"
+#  ifdef SYSTEM_ZIP
+#    include <minizip/unzip.h>
+#  else
+#    include "unzip/unzip.h"
+#  endif
 #endif
 
 #ifdef JMA_SUPPORT
@@ -204,11 +208,6 @@
 
 #include <ctype.h>
 #include <sys/stat.h>
-#ifdef _WIN32
-#include <direct.h>
-#else
-#include <unistd.h>
-#endif
 
 #include "snes9x.h"
 #include "memmap.h"
@@ -220,8 +219,10 @@
 #include "cheats.h"
 #include "display.h"
 
+#ifdef __LIBRETRO__
 #include "libretro/libretro.h"
 extern retro_log_printf_t log_cb;
+#endif
 int dma_kludge;
 
 void S9xAppendMapping(struct retro_memory_descriptor *desc);
@@ -1247,12 +1248,14 @@ static bool8 is_BSCart_BIOS(const uint8 *data, uint32 size)
 	{
 		Memory.LoROM = TRUE;
 		Memory.HiROM = FALSE;
+
 		return (TRUE);
 	}
 	else if ((data[0xFFB2] == 0x5A) && (data[0xFFB5] != 0x20) && (data[0xFFDA] == 0x33))
 	{
 		Memory.LoROM = FALSE;
 		Memory.HiROM = TRUE;
+
 		return (TRUE);
 	}
 	else
@@ -1427,7 +1430,7 @@ uint32 CMemory::FileLoader (uint8 *buffer, const char *filename, uint32 maxsize)
 	_makepath(fname, drive, dir, name, exts);
 
 	int	nFormat = FILE_DEFAULT;
-	if (strcasecmp(ext, "zip") == 0)
+	if (strcasecmp(ext, "zip") == 0 || strcasecmp(ext, "msu1") == 0)
 		nFormat = FILE_ZIP;
 	else
 	if (strcasecmp(ext, "jma") == 0)
@@ -1540,16 +1543,6 @@ bool8 CMemory::LoadROMMem (const uint8 *source, uint32 sourceSize)
         return FALSE;
 
     strcpy(ROMFilename,"MemoryROM");
-   
-    //allows headered roms to be loaded from ram instead of file
-    uint32	calc_size = (sourceSize / 0x2000) * 0x2000;
-    if ((sourceSize - calc_size == 512 && !Settings.ForceNoHeader) || Settings.ForceHeader)
-    {
-       source += 512;
-       sourceSize -= 512;
-       S9xMessage(S9X_INFO, S9X_HEADERS_INFO, "Found ROM file header (and ignored it).");
-    }
-    //end of header fix
 
     do
     {
@@ -1804,7 +1797,7 @@ bool8 CMemory::LoadMultiCartMem (const uint8 *sourceA, uint32 sourceASize,
 	uint32 offset = 0;
 	memset(ROM, 0, MAX_ROM_SIZE);
 	memset(&Multi, 0, sizeof(Multi));
-
+ 
 	if(bios) {
 		if(!is_SufamiTurbo_BIOS(bios,biosSize))
 			return FALSE;
@@ -1860,7 +1853,6 @@ bool8 CMemory::LoadMultiCart (const char *cartA, const char *cartB)
 	return LoadMultiCartInt();
 }
 
-extern int is_bsx (unsigned char *p);
 bool8 CMemory::LoadMultiCartInt ()
 {
 	bool8	r = TRUE;
@@ -2666,7 +2658,7 @@ void CMemory::InitROM (void)
 	Checksum_Calculate();
 
 	bool8 isChecksumOK = (ROMChecksum + ROMComplementChecksum == 0xffff) &
-											 (ROMChecksum == CalculatedChecksum);
+	                     (ROMChecksum == CalculatedChecksum);
 
 	//// Build more ROM information
 
@@ -2678,7 +2670,7 @@ void CMemory::InitROM (void)
 		int offset = HiROM ? 0xffc0 : 0x7fc0;
 		// Backup
 		uint8 BSMagic0 = ROM[offset + 22],
-					BSMagic1 = ROM[offset + 23];
+		      BSMagic1 = ROM[offset + 23];
 		// uCONSRT standard
 		ROM[offset + 22] = 0x42;
 		ROM[offset + 23] = 0x00;
