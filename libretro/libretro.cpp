@@ -21,6 +21,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <fcntl.h>
+#include "../apu/bapu/dsp/SPC_DSP.h"
 
 #define RETRO_DEVICE_JOYPAD_MULTITAP ((2 << 8) | RETRO_DEVICE_JOYPAD)
 #define RETRO_DEVICE_LIGHTGUN_SUPER_SCOPE ((1 << 8) | RETRO_DEVICE_LIGHTGUN)
@@ -65,6 +66,9 @@ static retro_input_state_t input_state_cb = NULL;
 
 static bool lufia2_credits_hack = false;
 static uint16 *gfx_blend;
+
+static float audio_interp_max = 32767.0;
+static int audio_interp_mode = 2;
 
 static void extract_basename(char *buf, const char *path, size_t size)
 {
@@ -166,6 +170,7 @@ void retro_set_environment(retro_environment_t cb)
       { "snes9x_overclock_cycles", "Reduce Slowdown (Hack, Unsafe); disabled|compatible|max" },
       { "snes9x_reduce_sprite_flicker", "Reduce Flickering (Hack, Unsafe); disabled|enabled" },
       { "snes9x_randomize_memory", "Randomize Memory (Unsafe); disabled|enabled" },
+      { "snes9x_audio_interpolation", "Audio Interpolation; gaussian|cubic|8-tap|none|linear" },
       { "snes9x_layer_1", "Show layer 1; enabled|disabled" },
       { "snes9x_layer_2", "Show layer 2; enabled|disabled" },
       { "snes9x_layer_3", "Show layer 3; enabled|disabled" },
@@ -301,6 +306,28 @@ static void update_variables(void)
          randomize_memory = true;
       else
          randomize_memory = false;
+   }
+
+   var.key = "snes9x_audio_interpolation";
+   var.value = NULL;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      int oldval = audio_interp_mode;
+
+      if (strcmp(var.value, "none") == 0)
+         audio_interp_mode = 0;
+      else if (strcmp(var.value, "linear") == 0)
+         audio_interp_mode = 1;
+      else if (strcmp(var.value, "gaussian") == 0)
+         audio_interp_mode = 2;
+      else if (strcmp(var.value, "cubic") == 0)
+         audio_interp_mode = 3;
+      else if (strcmp(var.value, "8-tap") == 0)
+         audio_interp_mode = 4;
+
+      if (oldval != audio_interp_mode)
+         audio_interp_max = 32767.0f;
    }
 
    int disabled_channels=0;
@@ -870,6 +897,8 @@ void retro_load_init_reset()
       for(int lcv=0; lcv<0x20000; lcv++)
          Memory.RAM[lcv] = rand()%256;
    }
+
+   audio_interp_max = 32767.0;
 }
 
 
@@ -1682,6 +1711,79 @@ void S9xCloseSnapshotFile(STREAM file)
 void S9xAutoSaveSRAM()
 {
    return;
+}
+
+bool8 get_snes_interp()
+{
+   if(audio_interp_mode != 2) return true;
+   return false;
+}
+
+#include "fir_lut.h"
+int snes_interp(void *ptr)
+{
+   SNES::SPC_DSP::voice_t const* v = (SNES::SPC_DSP::voice_t const*) ptr;
+   int offset = v->buf_pos + (v->interp_pos >> 12);
+   int poffset = (v->interp_pos >> 4) & 0xff;
+   int output;
+
+   switch(audio_interp_mode)
+   {
+   // none
+   case 0:
+      output = v->buf[offset];
+      break;
+
+   // linear
+   case 1:
+      output  = v->buf[offset + 0];
+      output += v->buf[offset + 1];
+      break;
+
+   // gaussian
+   case 2:
+      break;
+
+   // cubic
+   case 3:
+      output  = (audio_cubic_table[poffset + 256*3] * v->buf[offset + 0]) >> 11;
+      output += (audio_cubic_table[poffset + 256*2] * v->buf[offset + 1]) >> 11;
+      output += (audio_cubic_table[poffset + 256*1] * v->buf[offset + 2]) >> 11;
+      output += (audio_cubic_table[poffset + 256*0] * v->buf[offset + 3]) >> 11;
+      break;
+
+   // 8-tap
+   case 4:
+      // 12-bit ==> 11-bit table
+      poffset = (v->interp_pos >> 1) & 0x7ff;
+
+      output  = (audio_fir_lut[poffset*8 + 0] * v->buf[offset + 0]) >> 11;
+      output += (audio_fir_lut[poffset*8 + 1] * v->buf[offset + 1]) >> 11;
+      output += (audio_fir_lut[poffset*8 + 2] * v->buf[offset + 2]) >> 11;
+      output += (audio_fir_lut[poffset*8 + 3] * v->buf[offset + 3]) >> 11;
+      output += (audio_fir_lut[poffset*8 + 4] * v->buf[offset + 4]) >> 11;
+      output += (audio_fir_lut[poffset*8 + 5] * v->buf[offset + 5]) >> 11;
+      output += (audio_fir_lut[poffset*8 + 6] * v->buf[offset + 6]) >> 11;
+      output += (audio_fir_lut[poffset*8 + 7] * v->buf[offset + 7]) >> 11;
+      break;
+   }
+
+   float temp_f;
+   while(1)
+   {
+      temp_f = (float) output;
+      temp_f *= 32767.0f / audio_interp_max;
+
+      if( temp_f > 32767.0f ) audio_interp_max = output;
+      else if( temp_f < -32768.0f ) audio_interp_max = -output;
+      else break;
+   }
+   output = (int) temp_f;
+
+   if( output >  32767 ) output =  32767;
+   if( output < -32768 ) output = -32768;
+
+   return output;
 }
 
 #ifndef __WIN32__
