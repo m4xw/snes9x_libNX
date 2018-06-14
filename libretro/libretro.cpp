@@ -799,7 +799,7 @@ static void Remove_Header(uint8_t *&romptr, size_t &romsize, bool multicart_sufa
    }
 }
 
-static bool LoadBIOS(uint8 *biosrom, const char *biosname, int biossize)
+static bool LoadBIOS(uint8 *biosrom, const char *biosname, size_t biossize)
 {
    FILE	*fp;
    char	name[PATH_MAX + 1];
@@ -973,7 +973,7 @@ bool retro_load_game_special(unsigned game_type, const struct retro_game_info *i
    uint8_t *romptr[3];
    size_t romsize[3];
 
-   for(int lcv=0; lcv<num_info; lcv++)
+   for(size_t lcv=0; lcv<num_info; lcv++)
    {
       romptr[lcv] = (uint8_t *) info[lcv].data;
       romsize[lcv] = info[lcv].size;
@@ -1713,19 +1713,19 @@ void S9xAutoSaveSRAM()
    return;
 }
 
-bool8 get_snes_interp()
+bool8 libretro_get_snes_interp()
 {
    if(audio_interp_mode != 2) return true;
    return false;
 }
 
 #include "fir_lut.h"
-int snes_interp(void *ptr)
+int libretro_snes_interp(void *ptr)
 {
    SNES::SPC_DSP::voice_t const* v = (SNES::SPC_DSP::voice_t const*) ptr;
    int offset = v->buf_pos + (v->interp_pos >> 12);
    int poffset = (v->interp_pos >> 4) & 0xff;
-   int output;
+   int output = 0;
 
    switch(audio_interp_mode)
    {
