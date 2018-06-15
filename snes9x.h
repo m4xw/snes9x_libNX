@@ -254,7 +254,7 @@
 #define SNES_MAX_PAL_VCOUNTER		312
 #define SNES_HCOUNTER_MAX			341
 
-#define ONE_CYCLE						(overclock_cycles ? one_c : 6)
+#define ONE_CYCLE					(overclock_cycles ? one_c : 6)
 #define SLOW_ONE_CYCLE				(overclock_cycles ? slow_one_c : 8)
 #define TWO_CYCLES					(overclock_cycles ? two_c : 12)
 #define	ONE_DOT_CYCLE				4
@@ -491,12 +491,15 @@ enum
 void S9xSetPause(uint32);
 void S9xClearPause(uint32);
 void S9xExit(void);
-void S9xMessage(int type, int, const char *s);
+void S9xMessage(int, int, const char *);
 
 extern struct SSettings			Settings;
 extern struct SCPUState			CPU;
 extern struct STimings			Timings;
 extern struct SSNESGameFixes	SNESGameFixes;
 extern char						String[513];
+
+extern bool8 libretro_get_snes_interp();
+extern int libretro_snes_interp(void *ptr);
 
 #endif

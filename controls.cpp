@@ -482,8 +482,6 @@ static int32 ApplyMulti (s9xcommand_t *, int32, int16);
 static void do_polling (int);
 static void UpdatePolledMouse (int);
 
-extern int macsrifle_adjust_x, macsrifle_adjust_y;
-
 
 static string& operator += (string &s, int i)
 {
@@ -527,8 +525,8 @@ static void DoGunLatch (int x, int y)
 
 static void DoMacsRifleLatch (int x, int y)
 {
-	PPU.GunVLatch = (uint16) (y + 42) + (int16) macsrifle_adjust_y;
-	PPU.GunHLatch = (uint16) (x + 76) + (int16) macsrifle_adjust_x;
+	PPU.GunVLatch = (uint16) (y + 42);
+	PPU.GunHLatch = (uint16) (x + 76);
 }
 
 static int maptype (int t)
@@ -688,8 +686,8 @@ void S9xSetController (int port, enum controllers controller, int8 id1, int8 id2
 			if (id1 < 0 || id1 > 7)
 				break;
 
-			newcontrollers[port] = JOYPAD0 + id1;
-			curcontrollers[port] = newcontrollers[port];
+			// libretro: hotplug immediately
+			curcontrollers[port] = newcontrollers[port] = JOYPAD0 + id1;
 			return;
 
 		case CTL_MOUSE:
@@ -701,8 +699,8 @@ void S9xSetController (int port, enum controllers controller, int8 id1, int8 id2
 				break;
 			}
 
-			newcontrollers[port] = MOUSE0 + id1;
-			curcontrollers[port] = newcontrollers[port];
+			// libretro: hotplug immediately
+			curcontrollers[port] = newcontrollers[port] = MOUSE0 + id1;
 			return;
 
 		case CTL_SUPERSCOPE:
@@ -712,8 +710,8 @@ void S9xSetController (int port, enum controllers controller, int8 id1, int8 id2
 				break;
 			}
 
-			newcontrollers[port] = SUPERSCOPE;
-			curcontrollers[port] = newcontrollers[port];
+			// libretro: hotplug immediately
+			curcontrollers[port] = newcontrollers[port] = SUPERSCOPE;
 			return;
 
 		case CTL_JUSTIFIER:
@@ -725,8 +723,8 @@ void S9xSetController (int port, enum controllers controller, int8 id1, int8 id2
 				break;
 			}
 
-			newcontrollers[port] = ONE_JUSTIFIER + id1;
-			curcontrollers[port] = newcontrollers[port];
+			// libretro: hotplug immediately
+			curcontrollers[port] = newcontrollers[port] = ONE_JUSTIFIER + id1;
 			return;
 
 		case CTL_MACSRIFLE:
@@ -736,8 +734,8 @@ void S9xSetController (int port, enum controllers controller, int8 id1, int8 id2
 				break;
 			}
 
-			newcontrollers[port] = MACSRIFLE;
-			curcontrollers[port] = newcontrollers[port];
+			// libretro: hotplug immediately
+			curcontrollers[port] = newcontrollers[port] = MACSRIFLE;
 			return;
 
 		case CTL_MP5:
@@ -755,9 +753,8 @@ void S9xSetController (int port, enum controllers controller, int8 id1, int8 id2
 				break;
 			}
 
-			newcontrollers[port] = MP5;
-			curcontrollers[port] = newcontrollers[port];
-
+			// libretro: hotplug immediately
+			curcontrollers[port] = newcontrollers[port] = MP5;
 			mp5[port].pads[0] = (id1 < 0) ? NONE : JOYPAD0 + id1;
 			mp5[port].pads[1] = (id2 < 0) ? NONE : JOYPAD0 + id2;
 			mp5[port].pads[2] = (id3 < 0) ? NONE : JOYPAD0 + id3;
@@ -769,8 +766,8 @@ void S9xSetController (int port, enum controllers controller, int8 id1, int8 id2
 			break;
 	}
 
-	newcontrollers[port] = NONE;
-	curcontrollers[port] = newcontrollers[port];
+	// libretro: hotplug immediately
+	curcontrollers[port] = newcontrollers[port] = NONE;
 }
 
 bool S9xVerifyControllers (void)
@@ -2185,7 +2182,6 @@ void S9xApplyCommand (s9xcommand_t cmd, int16 data1, int16 data2)
 			{
 				uint16	r, s, t, st;
 
-				s = t = st = 0;
 				r = cmd.button.joypad.buttons;
 				st = r & joypad[cmd.button.joypad.idx].togglestick & joypad[cmd.button.joypad.idx].toggleturbo;
 				r ^= st;
@@ -2474,7 +2470,7 @@ void S9xApplyCommand (s9xcommand_t cmd, int16 data1, int16 data2)
 
 						if (S9xUnfreezeGame(filename))
 						{
-							sprintf(buf, "%s.%.*s loaded", def, _MAX_EXT - 1, "oops");
+							snprintf(buf, 256, "%s.%.*s loaded", def, _MAX_EXT - 1, "oops");
 							S9xSetInfoString (buf);
 						}
 						else
@@ -2511,7 +2507,7 @@ void S9xApplyCommand (s9xcommand_t cmd, int16 data1, int16 data2)
 
 						if (S9xUnfreezeGame(filename))
 						{
-							sprintf(buf, "%s.%03d loaded", def, i - QuickLoad000);
+							snprintf(buf, 256, "%s.%03d loaded", def, i - QuickLoad000);
 							S9xSetInfoString(buf);
 						}
 						else
@@ -2538,7 +2534,7 @@ void S9xApplyCommand (s9xcommand_t cmd, int16 data1, int16 data2)
 						_splitpath(Memory.ROMFilename, drive, dir, def, ext);
 						snprintf(filename, PATH_MAX + 1, "%s%s%s.%03d", S9xGetDirectory(SNAPSHOT_DIR), SLASH_STR, def, i - QuickSave000);
 
-						sprintf(buf, "%s.%03d saved", def, i - QuickSave000);
+						snprintf(buf, 256, "%s.%03d saved", def, i - QuickSave000);
 						S9xSetInfoString(buf);
 
 						S9xFreezeGame(filename);
@@ -3702,7 +3698,6 @@ void S9xControlPostLoadState (struct SControlSnapshot *s)
 		COPY(superscope.next_buttons);
 		COPY(superscope.read_buttons);
 
-		
 		for (int j = 0; j < 2; j++)
 			COPY(justifier.x[j]);
 		for (int j = 0; j < 2; j++)
