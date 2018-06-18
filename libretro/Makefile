@@ -28,6 +28,8 @@ else ifneq (,$(findstring armv,$(platform)))
    override platform += unix
 else ifneq (,$(findstring rpi,$(platform)))
    override platform += unix
+else ifneq (,$(findstring snesc,$(platfrom)))
+   override platform += unix
 endif
 
 TARGET_NAME	= snes9x
@@ -67,6 +69,9 @@ ifneq (,$(findstring unix,$(platform)))
       CXXFLAGS += -DARM
    # Raspberry Pi
    else ifneq (,$(findstring rpi,$(platform)))
+      CXXFLAGS += -DARM
+   # (S)NESC
+   else ifneq (,$(findstring snesc,$(platfrom)))
       CXXFLAGS += -DARM
    endif
 
@@ -522,6 +527,14 @@ ifeq ($(STATIC_LINKING), 1)
 	$(AR) rcs $@ $(OBJECTS)
 else
 	$(LD) $(fpic) $(SHARED) $(LINKOUT)$@ $(OBJECTS) $(LDFLAGS) $(LIBS)
+endif
+
+ifneq (,$(findstring snesc,$(platform)))
+    mkdir -p hakchi/etc/libretro/core/ hakchi/etc/libretro/info/ hakchi/etc/preinit.d/
+    cp $(TARGET_NAME)_libretro.so hakchi/etc/libretro/core/
+    cd hakchi/etc/libretro/info/; wget https://buildbot.libretro.com/assets/frontend/info/$(TARGET_NAME)_libretro.info
+    cd ../../../; tar -czvf "../CORE_$(TARGET_NAME).hmod" *
+    touch "../CORE_$(TARGET_NAME).hmod"
 endif
 
 %.o: %.cpp 
