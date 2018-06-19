@@ -9,6 +9,7 @@ BACKSLASH := \$(BACKSLASH)
 filter_out1 = $(filter-out $(firstword $1),$1)
 filter_out2 = $(call filter_out1,$(call filter_out1,$1))
 
+
 ifeq ($(platform),)
    platform = unix
    ifeq ($(shell uname -s),)
@@ -28,7 +29,7 @@ else ifneq (,$(findstring armv,$(platform)))
    override platform += unix
 else ifneq (,$(findstring rpi,$(platform)))
    override platform += unix
-else ifneq (,$(findstring snesc,$(platfrom)))
+else ifneq (,$(findstring snesc,$(platform)))
    override platform += unix
 endif
 
@@ -70,9 +71,10 @@ ifneq (,$(findstring unix,$(platform)))
    # Raspberry Pi
    else ifneq (,$(findstring rpi,$(platform)))
       CXXFLAGS += -DARM
+   endif
    # (S)NESC
-   else ifneq (,$(findstring snesc,$(platfrom)))
-      CXXFLAGS += -DARM
+   ifneq (,$(findstring snesc,$(platform)))
+      CXXFLAGS += -DARM -marm -mcpu=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard
    endif
 
 # OS X
@@ -529,12 +531,14 @@ else
 	$(LD) $(fpic) $(SHARED) $(LINKOUT)$@ $(OBJECTS) $(LDFLAGS) $(LIBS)
 endif
 
+
 ifneq (,$(findstring snesc,$(platform)))
-    mkdir -p hakchi/etc/libretro/core/ hakchi/etc/libretro/info/ hakchi/etc/preinit.d/
-    cp $(TARGET_NAME)_libretro.so hakchi/etc/libretro/core/
-    cd hakchi/etc/libretro/info/; wget https://buildbot.libretro.com/assets/frontend/info/$(TARGET_NAME)_libretro.info
-    cd ../../../; tar -czvf "../CORE_$(TARGET_NAME).hmod" *
-    touch "../CORE_$(TARGET_NAME).hmod"
+	@echo "** BUILDING HAKCHI HMOD PACKAGE **"
+	mkdir -p hakchi/etc/libretro/core/ hakchi/etc/libretro/info/ hakchi/etc/preinit.d/
+	rm -f hakchi/etc/libretro/info/*
+	cp $(TARGET_NAME)_libretro.so hakchi/etc/libretro/core/
+	cd hakchi/etc/libretro/info/; wget https://buildbot.libretro.com/assets/frontend/info/$(TARGET_NAME)_libretro.info
+	cd hakchi/; tar -czvf "CORE_$(TARGET_NAME).hmod" *
 endif
 
 %.o: %.cpp 
@@ -544,5 +548,5 @@ endif
 	$(CC) $(INCFLAGS) $(CPPFLAGS) $(CFLAGS) -c $(OBJOUT)$@ $<
 
 clean:
-	rm -f $(OBJECTS) $(TARGET)
+	rm -f $(OBJECTS) $(TARGET) CORE_$(TARGET_NAME).hmod
 endif
