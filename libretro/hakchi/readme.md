@@ -1,9 +1,9 @@
 -----------------------
-Name: SNES9x2016 
+Name: SNES9x
 Creator: Libretro
 Category: RetroArch Cores
 -----------------------
-=== SNES9x2016 Core for RetroArch ===
+=== SNES9x Core for RetroArch ===
 
 Module adds support for Super Famicom / Super Nintendo
 
