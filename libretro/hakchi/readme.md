@@ -14,7 +14,7 @@ Available executables and arguments to run Core:
 
 Core by libretro
 
-Built and assembled by HakchiCloud buildbot - [Website](https://hakchiresources.com)
+Built and assembled by HakchiCloud - [Website](https://hakchiresources.com)
 
 Hakchi module system by madmonkey
 
