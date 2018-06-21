@@ -29,7 +29,7 @@ else ifneq (,$(findstring armv,$(platform)))
    override platform += unix
 else ifneq (,$(findstring rpi,$(platform)))
    override platform += unix
-else ifneq (,$(findstring snesc,$(platform)))
+else ifneq (,$(findstring nintendoc,$(platform)))
    override platform += unix
 endif
 
@@ -72,8 +72,8 @@ ifneq (,$(findstring unix,$(platform)))
    else ifneq (,$(findstring rpi,$(platform)))
       CXXFLAGS += -DARM
    endif
-   # (S)NESC
-   ifneq (,$(findstring snesc,$(platform)))
+   # Nintendo Classics (Hakchi)
+   ifneq (,$(findstring nintendoc,$(platform)))
       CXXFLAGS += -DARM -marm -mcpu=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard
    endif
 
@@ -532,7 +532,7 @@ else
 endif
 
 
-ifneq (,$(findstring snesc,$(platform)))
+ifneq (,$(findstring nintendoc,$(platform)))
 	@echo "** BUILDING HAKCHI HMOD PACKAGE **"
 	mkdir -p hakchi/etc/libretro/core/ hakchi/etc/libretro/info/ hakchi/etc/preinit.d/
 	rm -f hakchi/etc/libretro/info/*
