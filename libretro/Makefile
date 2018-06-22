@@ -9,6 +9,7 @@ BACKSLASH := \$(BACKSLASH)
 filter_out1 = $(filter-out $(firstword $1),$1)
 filter_out2 = $(call filter_out1,$(call filter_out1,$1))
 
+
 ifeq ($(platform),)
    platform = unix
    ifeq ($(shell uname -s),)
@@ -27,6 +28,8 @@ ifeq ($(platform),)
 else ifneq (,$(findstring armv,$(platform)))
    override platform += unix
 else ifneq (,$(findstring rpi,$(platform)))
+   override platform += unix
+else ifneq (,$(findstring nintendoc,$(platform)))
    override platform += unix
 endif
 
@@ -68,6 +71,10 @@ ifneq (,$(findstring unix,$(platform)))
    # Raspberry Pi
    else ifneq (,$(findstring rpi,$(platform)))
       CXXFLAGS += -DARM
+   endif
+   # Nintendo Classics (Hakchi)
+   ifneq (,$(findstring nintendoc,$(platform)))
+      CXXFLAGS += -DARM -marm -mcpu=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard
    endif
 
 # OS X
@@ -524,6 +531,16 @@ else
 	$(LD) $(fpic) $(SHARED) $(LINKOUT)$@ $(OBJECTS) $(LDFLAGS) $(LIBS)
 endif
 
+
+ifneq (,$(findstring nintendoc,$(platform)))
+	@echo "** BUILDING HAKCHI HMOD PACKAGE **"
+	mkdir -p hakchi/etc/libretro/core/ hakchi/etc/libretro/info/ hakchi/etc/preinit.d/
+	rm -f hakchi/etc/libretro/info/*
+	cp $(TARGET_NAME)_libretro.so hakchi/etc/libretro/core/
+	cd hakchi/etc/libretro/info/; wget https://buildbot.libretro.com/assets/frontend/info/$(TARGET_NAME)_libretro.info
+	cd hakchi/; tar -czvf "CORE_$(TARGET_NAME).hmod" *
+endif
+
 %.o: %.cpp 
 	$(CXX) $(INCFLAGS) $(CPPFLAGS) $(CXXFLAGS) -c $(OBJOUT)$@ $<
 
@@ -531,5 +548,5 @@ endif
 	$(CC) $(INCFLAGS) $(CPPFLAGS) $(CFLAGS) -c $(OBJOUT)$@ $<
 
 clean:
-	rm -f $(OBJECTS) $(TARGET)
+	rm -f $(OBJECTS) $(TARGET) CORE_$(TARGET_NAME).hmod
 endif
