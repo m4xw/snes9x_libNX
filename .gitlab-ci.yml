@@ -1,7 +1,11 @@
 variables:
   PACKAGE_FOLDER: "snes9x"
 
+stages:
+  - package
+
 package:
+  stage: package
   image: starcarr/libnx:latest
   script:
     - sh build.sh $PACKAGE_FOLDER master
@@ -13,6 +17,7 @@ package:
     - master
 
 nightly:
+  stage: package
   image: starcarr/libnx:nightly
   script:
     - sh build.sh $PACKAGE_FOLDER develop
