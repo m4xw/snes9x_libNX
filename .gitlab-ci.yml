@@ -6,11 +6,6 @@ variables:
   NRO_NAME: "snes9x.nro"
   APP_TITLE: "SNES9X libnx"
 
-cache:
-  key: ${CI_COMMIT_REF_SLUG}
-  paths:
-  - $PACKAGE_FOLDER
-
 stages:
   - build
   - package
@@ -33,17 +28,38 @@ build:
     - APP_TITLE="$APP_TITLE" make -f Makefile.switch -j20
     - cp retroarch_switch.nro ../$PACKAGE_FOLDER/$NRO_NAME
     - cp retroarch.cfg ../$PACKAGE_FOLDER/retroarch.cfg
+  artifacts:
+    expire_in: 80 minutes
+    name: temp
+    paths:
+    - $PACKAGE_FOLDER
 
 package:
   stage: package
   script:
-    - echo 'creating zip'
+    - echo 'creating stable zip'
   when: on_success
   artifacts:
     name: $PACKAGE_FOLDER
     paths:
     - $PACKAGE_FOLDER
   only:
-  - master
+    - master
+
+nightly:
+  stage: package
+  script:
+    - echo 'creating nightly zip'
+  when: on_success
+  artifacts:
+    name: $PACKAGE_FOLDER
+    expire_in: 24 hours
+    paths:
+    - $PACKAGE_FOLDER
+  only:
+    - schedules
+    - triggers
+  except:
+    - master
 
 
