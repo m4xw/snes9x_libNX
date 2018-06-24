@@ -50,9 +50,6 @@ nightly:
     expire_in: 24 hours
     paths:
     - $PACKAGE_FOLDER
-  only:
-    - schedules
-    - triggers
   except:
     - master
 
