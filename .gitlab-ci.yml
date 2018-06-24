@@ -1,44 +1,26 @@
-image: starcarr/libnx:latest
-
 variables:
   PACKAGE_FOLDER: "snes9x"
   LIBRARY_NAME: "snes9x_libretro_switch.a"
   NRO_NAME: "snes9x.nro"
   APP_TITLE: "SNES9X libnx"
 
-stages:
-  - build
-  - package
-
-build:
-  stage: build
+package:
+  image: starcarr/libnx:latest
   script:
     - rm -rf $PACKAGE_FOLDER
     - mkdir $PACKAGE_FOLDER
     - cp assets/overlay.cfg $PACKAGE_FOLDER/overlay.cfg
     - cp assets/overlay.png $PACKAGE_FOLDER/overlay.png
     - cd libretro/
-    - make platform=switch -j20
+    - make platform=switch -j10
     - cd ../
     - git clone -b master https://git.m4xw.net/Switch/RetroArch/RetroArch.git --depth=1
     - cp libretro/$LIBRARY_NAME RetroArch/libretro_switch.a 
     - cp assets/icon.jpg RetroArch/icon.jpg
     - cd RetroArch/ 
     - mkdir romfs
-    - APP_TITLE="$APP_TITLE" make -f Makefile.switch -j20
+    - APP_TITLE="$APP_TITLE" make -f Makefile.switch -j10
     - cp retroarch_switch.nro ../$PACKAGE_FOLDER/$NRO_NAME
-    - cp retroarch.cfg ../$PACKAGE_FOLDER/retroarch.cfg
-  artifacts:
-    expire_in: 80 minutes
-    name: temp
-    paths:
-    - $PACKAGE_FOLDER
-
-package:
-  stage: package
-  script:
-    - echo 'creating stable zip'
-  when: on_success
   artifacts:
     name: $PACKAGE_FOLDER
     paths:
@@ -47,10 +29,22 @@ package:
     - master
 
 nightly:
-  stage: package
+  image: starcarr/libnx:nightly
   script:
-    - echo 'creating nightly zip'
-  when: on_success
+    - rm -rf $PACKAGE_FOLDER
+    - mkdir $PACKAGE_FOLDER
+    - cp assets/overlay.cfg $PACKAGE_FOLDER/overlay.cfg
+    - cp assets/overlay.png $PACKAGE_FOLDER/overlay.png
+    - cd libretro/
+    - make platform=switch -j10
+    - cd ../
+    - git clone -b develop https://git.m4xw.net/Switch/RetroArch/RetroArch.git --depth=1
+    - cp libretro/$LIBRARY_NAME RetroArch/libretro_switch.a
+    - cp assets/icon.jpg RetroArch/icon.jpg
+    - cd RetroArch/
+    - mkdir romfs
+    - APP_TITLE="$APP_TITLE" make -f Makefile.switch -j10
+    - cp retroarch_switch.nro ../$PACKAGE_FOLDER/$NRO_NAME
   artifacts:
     name: $PACKAGE_FOLDER
     expire_in: 24 hours
