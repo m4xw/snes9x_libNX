@@ -215,7 +215,7 @@ include $(DEVKITPRO)/libnx/switch_rules
                 -O2 \
 				-fPIE -I$(LIBNX)/include/ -ffunction-sections -fdata-sections -ftls-model=local-exec -Wl,--allow-multiple-definition -specs=$(LIBNX)/switch.specs
     CFLAGS += $(INCDIRS)
-    CFLAGS	+=	$(INCLUDE)  -D__SWITCH__
+    CFLAGS	+=	$(INCLUDE)  -D__SWITCH__ -DARM -march=armv8-a -mtune=cortex-a57 -mtp=soft
     CXXFLAGS := $(ASFLAGS) $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11
     CFLAGS += -std=gnu11
     STATIC_LINKING = 1
