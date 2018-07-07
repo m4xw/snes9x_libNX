@@ -1,15 +1,22 @@
 #define CYCLE_ACCURATE
 #define PSEUDO_CYCLE
 
+#ifdef DEBUGGER
+#include "../../../snes9x.h"
+#include "../../../debug.h"
+char tmp[1024];
+#endif
+
 #include <snes/snes.hpp>
 
 #define SMP_CPP
 namespace SNES {
 
-#if defined(DEBUGGER)
-  #include "debugger/debugger.cpp"
+// TODO: reactivate once APU debugger works again
+#ifdef DEBUGGER
+//  #include "debugger/debugger.cpp"
   #include "debugger/disassembler.cpp"
-  SMPDebugger smp;
+  SMP smp;
 #else
   SMP smp;
 #endif
@@ -152,6 +159,7 @@ SMP::SMP() {
 }
 
 SMP::~SMP() {
+	delete[] apuram;
 }
 
 }

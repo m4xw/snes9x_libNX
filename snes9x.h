@@ -22,10 +22,12 @@
 
   (c) Copyright 2006 - 2007  nitsuja
 
-  (c) Copyright 2009 - 2011  BearOso,
+  (c) Copyright 2009 - 2018  BearOso,
                              OV2
 
-  (c) Copyright 2011 - 2016  Hans-Kristian Arntzen,
+  (c) Copyright 2017         qwertymodo
+
+  (c) Copyright 2011 - 2017  Hans-Kristian Arntzen,
                              Daniel De Matteis
                              (Under no circumstances will commercial rights be given)
 
@@ -122,6 +124,9 @@
   Sound emulator code used in 1.52+
   (c) Copyright 2004 - 2007  Shay Green (gblargg@gmail.com)
 
+  S-SMP emulator code used in 1.54+
+  (c) Copyright 2016         byuu
+
   SH assembler code partly based on x86 assembler code
   (c) Copyright 2002 - 2004  Marcus Comstedt (marcus@mc.pp.se)
 
@@ -135,7 +140,7 @@
   (c) Copyright 2006 - 2007  Shay Green
 
   GTK+ GUI code
-  (c) Copyright 2004 - 2011  BearOso
+  (c) Copyright 2004 - 2018  BearOso
 
   Win32 GUI code
   (c) Copyright 2003 - 2006  blip,
@@ -143,14 +148,14 @@
                              Matthew Kendora,
                              Nach,
                              nitsuja
-  (c) Copyright 2009 - 2011  OV2
+  (c) Copyright 2009 - 2018  OV2
 
   Mac OS GUI code
   (c) Copyright 1998 - 2001  John Stiles
   (c) Copyright 2001 - 2011  zones
 
   Libretro port
-  (c) Copyright 2011 - 2016  Hans-Kristian Arntzen,
+  (c) Copyright 2011 - 2017  Hans-Kristian Arntzen,
                              Daniel De Matteis
                              (Under no circumstances will commercial rights be given)
 
@@ -189,7 +194,7 @@
 #define _SNES9X_H_
 
 #ifndef VERSION
-#define VERSION	"1.54.1"
+#define VERSION	"1.56.1"
 #endif
 
 #include "port.h"
@@ -249,7 +254,7 @@
 #define SNES_MAX_PAL_VCOUNTER		312
 #define SNES_HCOUNTER_MAX			341
 
-#define ONE_CYCLE						(overclock_cycles ? one_c : 6)
+#define ONE_CYCLE					(overclock_cycles ? one_c : 6)
 #define SLOW_ONE_CYCLE				(overclock_cycles ? slow_one_c : 8)
 #define TWO_CYCLES					(overclock_cycles ? two_c : 12)
 #define	ONE_DOT_CYCLE				4
@@ -333,6 +338,13 @@ enum
 	HC_WRAM_REFRESH_EVENT = 6
 };
 
+enum
+{
+	IRQ_NONE = 0,
+	IRQ_SET_FLAG = 1,
+	IRQ_CLEAR_FLAG = 2
+};
+
 struct STimings
 {
 	int32	H_Max_Master;
@@ -344,13 +356,14 @@ struct STimings
 	int32	HDMAInit;
 	int32	HDMAStart;
 	int32	NMITriggerPos;
+	int32	NextIRQTimer;
 	int32	IRQTriggerCycles;
 	int32	WRAMRefreshPos;
 	int32	RenderPos;
 	bool8	InterlaceField;
 	int32	DMACPUSync;		// The cycles to synchronize DMA and CPU. Snes9x cannot emulate correctly.
 	int32	NMIDMADelay;	// The delay of NMI trigger after DMA transfers. Snes9x cannot emulate correctly.
-	int32	IRQPendCount;	// This value is just a hack.
+	int32	IRQFlagChanging;	// This value is just a hack.
 	int32	APUSpeedup;
 	bool8	APUAllowTimeOverflow;
 };
@@ -363,6 +376,7 @@ struct SSettings
 	bool8	TraceUnknownRegisters;
 	bool8	TraceDSP;
 	bool8	TraceHCEvent;
+	bool8	TraceSMP;
 
 	bool8	SuperFX;
 	uint8	DSP;
@@ -382,7 +396,8 @@ struct SSettings
 	bool8	SuperScopeMaster;
 	bool8	JustifierMaster;
 	bool8	MultiPlayer5Master;
-
+	bool8	MacsRifleMaster;
+	
 	bool8	ForceLoROM;
 	bool8	ForceHiROM;
 	bool8	ForceHeader;
@@ -408,7 +423,6 @@ struct SSettings
 
 	bool8	SupportHiRes;
 	bool8	Transparency;
-   float SuperFXSpeedPerLine;
 	uint8	BG_Forced;
 	bool8	DisableGraphicWindows;
 
@@ -450,6 +464,7 @@ struct SSettings
 	bool8	UpAndDown;
 
 	bool8	OpenGLEnable;
+	uint32	SuperFXClockMultiplier;
 
 	bool8	FastSavestates;
 	bool8	HardDisableAudio;
@@ -476,12 +491,15 @@ enum
 void S9xSetPause(uint32);
 void S9xClearPause(uint32);
 void S9xExit(void);
-void S9xMessage(int type, int, const char *s);
+void S9xMessage(int, int, const char *);
 
 extern struct SSettings			Settings;
 extern struct SCPUState			CPU;
 extern struct STimings			Timings;
 extern struct SSNESGameFixes	SNESGameFixes;
 extern char						String[513];
+
+extern bool8 libretro_get_snes_interp();
+extern int libretro_snes_interp(void *ptr);
 
 #endif
