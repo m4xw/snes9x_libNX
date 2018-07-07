@@ -22,7 +22,7 @@
 
   (c) Copyright 2006 - 2007  nitsuja
 
-  (c) Copyright 2009 - 2017  BearOso,
+  (c) Copyright 2009 - 2018  BearOso,
                              OV2
 
   (c) Copyright 2017         qwertymodo
@@ -140,7 +140,7 @@
   (c) Copyright 2006 - 2007  Shay Green
 
   GTK+ GUI code
-  (c) Copyright 2004 - 2017  BearOso
+  (c) Copyright 2004 - 2018  BearOso
 
   Win32 GUI code
   (c) Copyright 2003 - 2006  blip,
@@ -148,7 +148,7 @@
                              Matthew Kendora,
                              Nach,
                              nitsuja
-  (c) Copyright 2009 - 2017  OV2
+  (c) Copyright 2009 - 2018  OV2
 
   Mac OS GUI code
   (c) Copyright 1998 - 2001  John Stiles
@@ -225,7 +225,6 @@ struct InternalPPU
 	struct ClipData Clip[2][6];
 	bool8	ColorsChanged;
 	bool8	OBJChanged;
-	bool8	DirectColourMapsNeedRebuild;
 	uint8	*TileCache[7];
 	uint8	*TileCached[7];
 	uint16	VRAMReadBuffer;
@@ -391,7 +390,7 @@ void S9xSetPPU (uint8, uint16);
 uint8 S9xGetPPU (uint16);
 void S9xSetCPU (uint8, uint16);
 uint8 S9xGetCPU (uint16);
-void S9xUpdateHVTimerPosition (void);
+void S9xUpdateIRQPositions (bool initial);
 void S9xFixColourBrightness (void);
 void S9xDoAutoJoypad (void);
 
@@ -640,10 +639,10 @@ static inline void REGISTER_2118_linear (uint8 Byte)
         }
 #endif
 
+
 static inline void REGISTER_2119 (uint8 Byte)
 {
 	CHECK_INBLANK();
-
 	uint32	address;
 
 	if (PPU.VMA.FullGraphicCount)

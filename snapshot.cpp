@@ -22,10 +22,12 @@
 
   (c) Copyright 2006 - 2007  nitsuja
 
-  (c) Copyright 2009 - 2016  BearOso,
+  (c) Copyright 2009 - 2018  BearOso,
                              OV2
 
-  (c) Copyright 2011 - 2016  Hans-Kristian Arntzen,
+  (c) Copyright 2017         qwertymodo
+
+  (c) Copyright 2011 - 2017  Hans-Kristian Arntzen,
                              Daniel De Matteis
                              (Under no circumstances will commercial rights be given)
 
@@ -138,7 +140,7 @@
   (c) Copyright 2006 - 2007  Shay Green
 
   GTK+ GUI code
-  (c) Copyright 2004 - 2016  BearOso
+  (c) Copyright 2004 - 2018  BearOso
 
   Win32 GUI code
   (c) Copyright 2003 - 2006  blip,
@@ -146,14 +148,14 @@
                              Matthew Kendora,
                              Nach,
                              nitsuja
-  (c) Copyright 2009 - 2016  OV2
+  (c) Copyright 2009 - 2018  OV2
 
   Mac OS GUI code
   (c) Copyright 1998 - 2001  John Stiles
   (c) Copyright 2001 - 2011  zones
 
   Libretro port
-  (c) Copyright 2011 - 2016  Hans-Kristian Arntzen,
+  (c) Copyright 2011 - 2017  Hans-Kristian Arntzen,
                              Daniel De Matteis
                              (Under no circumstances will commercial rights be given)
 
@@ -571,7 +573,8 @@ static FreezeData	SnapControls[] =
 	ARRAY_ENTRY(6, dummy3, 8, uint8_ARRAY_V),
 	INT_ENTRY(6, pad_read),
 	INT_ENTRY(6, pad_read_last),
-	ARRAY_ENTRY(6, internal, 60, uint8_ARRAY_V)
+	ARRAY_ENTRY(6, internal, 60, uint8_ARRAY_V),
+	ARRAY_ENTRY(10, internal_macs, 5, uint8_ARRAY_V)
 };
 
 #undef STRUCT
@@ -593,7 +596,7 @@ static FreezeData	SnapTimings[] =
 	INT_ENTRY(6, InterlaceField),
 	INT_ENTRY(6, DMACPUSync),
 	INT_ENTRY(6, NMIDMADelay),
-	INT_ENTRY(6, IRQPendCount),
+	INT_ENTRY(6, IRQFlagChanging),
 	INT_ENTRY(6, APUSpeedup),
 	INT_ENTRY(7, IRQTriggerCycles),
 	INT_ENTRY(7, APUAllowTimeOverflow)
@@ -1196,7 +1199,7 @@ void S9xResetSaveTimer (bool8 dontsave)
 		char	drive[_MAX_DRIVE + 1], dir[_MAX_DIR + 1], def[_MAX_FNAME + 1], ext[_MAX_EXT + 1];
 
 		_splitpath(Memory.ROMFilename, drive, dir, def, ext);
-		sprintf(filename, "%s%s%s.%.*s", S9xGetDirectory(SNAPSHOT_DIR), SLASH_STR, def, _MAX_EXT - 1, "oops");
+		snprintf(filename, PATH_MAX + 1, "%s%s%s.%.*s", S9xGetDirectory(SNAPSHOT_DIR), SLASH_STR, def, _MAX_EXT - 1, "oops");
 		S9xMessage(S9X_INFO, S9X_FREEZE_FILE_INFO, SAVE_INFO_OOPS);
 		S9xFreezeGame(filename);
 	}
@@ -1206,14 +1209,14 @@ void S9xResetSaveTimer (bool8 dontsave)
 
 uint32 S9xFreezeSize()
 {
-    nulStream stream;
-    S9xFreezeToStream(&stream);
-    return stream.size();
+	nulStream stream;
+	S9xFreezeToStream(&stream);
+	return stream.size();
 }
 
 bool8 S9xFreezeGameMem (uint8 *buf, uint32 bufSize)
 {
-    memStream mStream(buf, bufSize);
+	memStream mStream(buf, bufSize);
 	S9xFreezeToStream(&mStream);
 
 	return (TRUE);
@@ -1238,7 +1241,7 @@ bool8 S9xFreezeGame (const char *filename)
 
 int S9xUnfreezeGameMem (const uint8 *buf, uint32 bufSize)
 {
-    memStream stream(buf, bufSize);
+	memStream stream(buf, bufSize);
 	int result = S9xUnfreezeFromStream(&stream);
 
 	return result;
@@ -1310,10 +1313,10 @@ bool8 S9xUnfreezeGame (const char *filename)
 
 void S9xFreezeToStream (STREAM stream)
 {
-	char	buffer[1024];
+	char	buffer[8192];
 	uint8	*soundsnapshot = new uint8[SPC_SAVE_STATE_BLOCK_SIZE];
 
-        S9xPackStatus();
+	S9xPackStatus();
 
 	sprintf(buffer, "%s:%04d\n", SNAPSHOT_MAGIC, SNAPSHOT_VERSION);
 	WRITE_STREAM(buffer, strlen(buffer), stream);
@@ -1401,8 +1404,11 @@ void S9xFreezeToStream (STREAM stream)
 	if (Settings.BS)
 		FreezeStruct(stream, "BSX", &BSX, SnapBSX, COUNT(SnapBSX));
 
-    if (Settings.MSU1)
-        FreezeStruct(stream, "MSU", &MSU1, SnapMSU1, COUNT(SnapMSU1));
+	// libretro: g++ guard warning
+	if (Settings.MSU1)
+	{
+		FreezeStruct(stream, "MSU", &MSU1, SnapMSU1, COUNT(SnapMSU1));
+	}
 
 	delete [] soundsnapshot;
 }
@@ -1416,7 +1422,7 @@ int S9xUnfreezeFromStream (STREAM stream)
 	char	buffer[PATH_MAX + 1];
 
 	len = strlen(SNAPSHOT_MAGIC) + 1 + 4 + 1;
-	if (READ_STREAM(buffer, len, stream) != len)
+	if (READ_STREAM(buffer, len, stream) != (unsigned int ) len)
 		return (WRONG_FORMAT);
 
 	if (strncmp(buffer, SNAPSHOT_MAGIC, strlen(SNAPSHOT_MAGIC)) != 0)
@@ -1455,7 +1461,7 @@ int S9xUnfreezeFromStream (STREAM stream)
 	uint8	*local_srtc          = NULL;
 	uint8	*local_rtc_data      = NULL;
 	uint8	*local_bsx_data      = NULL;
-	uint8	*local_msu1_data      = NULL;
+	uint8	*local_msu1_data     = NULL;
 	uint8	*local_screenshot    = NULL;
 	uint8	*local_movie_data    = NULL;
 
@@ -1648,11 +1654,12 @@ int S9xUnfreezeFromStream (STREAM stream)
 		if (local_fillram)
 			memcpy(Memory.FillRAM, local_fillram, 0x8000);
 
-        if(version < SNAPSHOT_VERSION_BAPU) {
-            printf("Using Blargg APU snapshot loading (snapshot version %d, current is %d)\n...", version, SNAPSHOT_VERSION);
-            S9xAPULoadBlarggState(local_apu_sound);
-        } else
-		    S9xAPULoadState(local_apu_sound);
+		if(version < SNAPSHOT_VERSION_BAPU) {
+			printf("Using Blargg APU snapshot loading (snapshot version %d, current is %d)\n...", version, SNAPSHOT_VERSION);
+			S9xAPULoadBlarggState(local_apu_sound);
+		}
+		else
+			S9xAPULoadState(local_apu_sound);
 
 		struct SControlSnapshot	ctl_snap;
 		UnfreezeStructFromCopy(&ctl_snap, SnapControls, COUNT(SnapControls), local_control_data, version);
@@ -1746,6 +1753,7 @@ int S9xUnfreezeFromStream (STREAM stream)
 		ICPU.ShiftedDB = Registers.DB << 16;
 		S9xSetPCBase(Registers.PBPC);
 		S9xUnpackStatus();
+		S9xUpdateIRQPositions(false);
 		S9xFixCycles();
 
 		for (int d = 0; d < 8; d++)
@@ -1755,6 +1763,7 @@ int S9xUnfreezeFromStream (STREAM stream)
 		CPU.HDMARanInDMA = 0;
 
 		S9xFixColourBrightness();
+		S9xBuildDirectColourMaps();
 		IPPU.ColorsChanged = TRUE;
 		IPPU.OBJChanged = TRUE;
 		IPPU.RenderThisFrame = TRUE;
@@ -2050,7 +2059,6 @@ static bool CheckBlockName(STREAM stream, const char *name, int &len)
 {
 	char	buffer[16];
 	len = 0;
-	long	rewind = FIND_STREAM(stream);
 
 	size_t	l = READ_STREAM(buffer, 11, stream);
 	buffer[l] = 0;
@@ -2093,7 +2101,7 @@ static void SkipBlockWithName(STREAM stream, const char *name)
 
 static int UnfreezeBlock (STREAM stream, const char *name, uint8 *block, int size)
 {
-	char	buffer[16];
+	char	buffer[20];
 	int		len = 0, rem = 0;
 	long	rewind = FIND_STREAM(stream);
 
@@ -2134,7 +2142,7 @@ static int UnfreezeBlock (STREAM stream, const char *name, uint8 *block, int siz
 		memset(block, 0, size);
 	}
 
-	if (READ_STREAM(block, len, stream) != len)
+	if (READ_STREAM(block, len, stream) != (unsigned int) len)
 	{
 		REVERT_STREAM(stream, rewind, 0);
 		return (WRONG_FORMAT);

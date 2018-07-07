@@ -1,49 +1,32 @@
-image: starcarr/libnx:latest
-
 variables:
   PACKAGE_FOLDER: "snes9x"
-  LIBRARY_NAME: "snes9x_libretro_switch.a"
-  NRO_NAME: "snes9x.nro"
-  APP_TITLE: "SNES9X libnx"
-
-cache:
-  key: ${CI_COMMIT_REF_SLUG}
-  paths:
-  - $PACKAGE_FOLDER
 
 stages:
-  - build
   - package
-
-build:
-  stage: build
-  script:
-    - rm -rf $PACKAGE_FOLDER
-    - mkdir $PACKAGE_FOLDER
-    - cp assets/overlay.cfg $PACKAGE_FOLDER/overlay.cfg
-    - cp assets/overlay.png $PACKAGE_FOLDER/overlay.png
-    - cd libretro/
-    - make platform=switch -j20
-    - cd ../
-    - git clone -b master https://git.m4xw.net/Switch/RetroArch/RetroArch.git --depth=1
-    - cp libretro/$LIBRARY_NAME RetroArch/libretro_switch.a 
-    - cp assets/icon.jpg RetroArch/icon.jpg
-    - cd RetroArch/ 
-    - mkdir romfs
-    - APP_TITLE="$APP_TITLE" make -f Makefile.switch -j20
-    - cp retroarch_switch.nro ../$PACKAGE_FOLDER/$NRO_NAME
-    - cp retroarch.cfg ../$PACKAGE_FOLDER/retroarch.cfg
 
 package:
   stage: package
+  image: starcarr/libnx:latest
   script:
-    - echo 'creating zip'
-  when: on_success
+    - sh build.sh $PACKAGE_FOLDER master
   artifacts:
     name: $PACKAGE_FOLDER
     paths:
     - $PACKAGE_FOLDER
   only:
-  - master
+    - master
+
+nightly:
+  stage: package
+  image: starcarr/libnx:nightly
+  script:
+    - sh build.sh $PACKAGE_FOLDER develop
+  artifacts:
+    name: $PACKAGE_FOLDER
+    expire_in: 24 hours
+    paths:
+    - $PACKAGE_FOLDER
+  except:
+    - master
 
 
